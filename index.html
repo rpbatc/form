@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form — Physique Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --muted: #7a7875;
+    --accent: #c8f060;
+    --accent-dim: rgba(200,240,96,0.12);
+    --accent-dim2: rgba(200,240,96,0.06);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.12);
+    --gold: #f0c060;
+    --gold-dim: rgba(240,192,96,0.1);
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Instrument Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  .app {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    padding: 36px 0 28px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .header-left h1 {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .header-left h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+  .header-date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    border: 0.5px solid var(--border);
+  }
+  .nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .nav button:hover { color: var(--text); }
+  .nav button.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 0.5px solid var(--border2);
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card.highlight {
+    border-color: rgba(200,240,96,0.25);
+    background: linear-gradient(135deg, var(--surface) 60%, var(--accent-dim2));
+  }
+  .stat-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text);
+  }
+  .stat-value.accent { color: var(--accent); }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    font-family: var(--font-mono);
+  }
+  .stat-delta {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+  .stat-delta.good { color: var(--accent); }
+  .stat-delta.bad { color: var(--red); }
+
+  /* Progress bars */
+  .progress-section {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .progress-title {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  .prog-row {
+    margin-bottom: 14px;
+  }
+  .prog-row:last-child { margin-bottom: 0; }
+  .prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  .prog-label span:last-child { color: var(--text); }
+  .prog-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .prog-fill.red { background: var(--red); }
+  .prog-fill.gold { background: var(--gold); }
+
+  /* Chart section */
+  .chart-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .chart-range {
+    display: flex;
+    gap: 4px;
+  }
+  .chart-range button {
+    background: none;
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chart-range button.active, .chart-range button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chart-wrap { position: relative; height: 160px; width: 100%; }
+  .chart-wrap-sm { position: relative; height: 130px; width: 100%; }
+
+  /* Log form */
+  .log-hero {
+    text-align: center;
+    padding: 28px 0 24px;
+  }
+  .log-hero h2 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .log-hero p {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .log-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .log-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+  }
+  .field:focus-within {
+    border-color: rgba(200,240,96,0.4);
+  }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1;
+    -moz-appearance: textfield;
+  }
+  .field input::-webkit-outer-spin-button,
+  .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field input::placeholder { color: var(--surface2); }
+  .field .field-unit {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+
+  /* Protein target indicator inside field */
+  .protein-hint {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    margin-top: 4px;
+    transition: color 0.3s;
+  }
+
+  .submit-btn {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--accent);
+    color: #0e0e0f;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 16px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(200,240,96,0.25);
+  }
+  .submit-btn:active { transform: scale(0.99); }
+
+  /* Celebration overlay */
+  .celebrate {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+  }
+  .celebrate.show { display: flex; }
+  .celebrate-inner {
+    animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .celebrate-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .celebrate-title {
+    font-family: var(--font-display);
+    font-size: 42px;
+    color: var(--accent);
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .celebrate-sub {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-bottom: 28px;
+  }
+  .celebrate-dismiss {
+    background: none;
+    border: 0.5px solid var(--border2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .celebrate-dismiss:hover { color: var(--text); border-color: var(--text); }
+
+  /* Confetti canvas */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 499;
+    display: none;
+  }
+
+  /* Log history */
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .history-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 0.5px solid var(--border);
+    font-weight: 400;
+  }
+  .history-table td {
+    padding: 12px 12px;
+    font-size: 13px;
+    border-bottom: 0.5px solid var(--border);
+    font-family: var(--font-mono);
+    color: var(--muted);
+    vertical-align: middle;
+  }
+  .history-table td:first-child { color: var(--text); }
+  .history-table tr:last-child td { border-bottom: none; }
+  .history-table tr:hover td { background: var(--surface2); }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .pill.green { background: var(--accent-dim); color: var(--accent); }
+  .pill.red { background: var(--red-dim); color: var(--red); }
+  .pill.gold { background: var(--gold-dim); color: var(--gold); }
+
+  /* Goal silhouette comparison */
+  .comparison-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .comparison-title {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+  }
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    text-align: center;
+  }
+  .comp-metric {
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border);
+  }
+  .comp-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+  .comp-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .comp-you, .comp-goal {
+    text-align: center;
+  }
+  .comp-num {
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .comp-who {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+  .comp-you .comp-num { color: var(--gold); }
+  .comp-goal .comp-num { color: var(--accent); }
+  .comp-gap {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Nutrition targets card */
+  .nut-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .nut-big {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 14px 0 0;
+  }
+  .nut-item {
+    text-align: center;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+  }
+  .nut-num {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .nut-item:nth-child(1) .nut-num { color: var(--gold); }
+  .nut-item:nth-child(2) .nut-num { color: var(--accent); }
+  .nut-item:nth-child(3) .nut-num { color: var(--text); }
+  .nut-unit {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .select-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .select-row select {
+    flex: 1;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+  }
+  .select-row select:focus { border-color: rgba(200,240,96,0.4); }
+
+  /* Exercise cards */
+  .ex-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .ex-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .ex-card.top-priority { border-color: rgba(200,240,96,0.2); }
+  .ex-priority {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ex-priority-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .ex-priority-dot.gold { background: var(--gold); }
+  .ex-priority-dot.muted { background: var(--muted); }
+  .ex-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .ex-moves {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .ex-sets {
+    margin-top: 8px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+  .empty-state p { font-family: var(--font-mono); font-size: 13px; }
+
+  /* Timeline */
+  .timeline { padding: 4px 0; }
+  .tl-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+  .tl-left { display: flex; flex-direction: column; align-items: center; gap: 0; flex-shrink: 0; }
+  .tl-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    border: 0.5px solid var(--border2);
+    color: var(--muted);
+    background: var(--surface);
+  }
+  .tl-circle.done { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,240,96,0.3); }
+  .tl-circle.now { background: var(--gold-dim); color: var(--gold); border-color: rgba(240,192,96,0.3); }
+  .tl-line {
+    width: 0.5px;
+    flex: 1;
+    min-height: 24px;
+    background: var(--border);
+    margin-top: 4px;
+  }
+  .tl-content { padding-top: 6px; padding-bottom: 8px; }
+  .tl-heading {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .tl-desc {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .log-grid { grid-template-columns: 1fr; }
+    .log-grid.three { grid-template-columns: 1fr 1fr; }
+    .comparison-grid { grid-template-columns: 1fr; }
+    .ex-grid { grid-template-columns: 1fr; }
+    .nut-big { grid-template-columns: 1fr; }
+    .nav button { font-size: 11px; padding: 7px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-inner">
+    <span class="celebrate-icon" id="cel-icon">💪</span>
+    <div class="celebrate-title" id="cel-title">Logged.</div>
+    <div class="celebrate-sub" id="cel-sub">Keep going. The form is coming.</div>
+    <button class="celebrate-dismiss" onclick="dismissCelebrate()">Continue →</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <h1>Form — <em>physique</em></h1>
+      <div class="header-sub">Rick · 6'3" · 40 · Manchester</div>
+    </div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <span id="sync-status" style="font-size:11px; font-family:var(--font-mono); color:var(--muted);">Initialising…</span>
+    <button onclick="signInWithGoogle()" id="drive-signin-btn" style="background:none; border:0.5px solid var(--border); color:var(--muted); font-family:var(--font-mono); font-size:11px; padding:4px 12px; border-radius:20px; cursor:pointer;">Connect Drive</button>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showPage('dashboard',this)">Dashboard</button>
+    <button onclick="showPage('log',this)">Log</button>
+    <button onclick="showPage('progress',this)">Progress</button>
+    <button onclick="showPage('nutrition',this)">Nutrition</button>
+    <button onclick="showPage('training',this)">Training</button>
+    <button onclick="showPage('calibrate',this)">Calibrate</button>
+    <button onclick="showPage('history',this)">History</button>
+    <button onclick="showPage('setup',this)">Setup</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page active">
+    <div class="stats-row" id="dash-stats">
+      <div class="stat-card">
+        <div class="stat-label">Weight</div>
+        <div class="stat-value" id="ds-weight">—</div>
+        <div class="stat-sub" id="ds-weight-sub">no data yet</div>
+        <div class="stat-delta" id="ds-weight-delta"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Body fat (Navy est.)</div>
+        <div class="stat-value" id="ds-bf">—</div>
+        <div class="stat-sub" id="ds-bf-scale">Scale: — · Goal: 10.5%</div>
+        <div class="stat-delta" id="ds-bf-delta"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Protein</div>
+        <div class="stat-value" id="ds-protein">—</div>
+        <div class="stat-sub">Target: 185g</div>
+        <div class="stat-delta" id="ds-protein-delta"></div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="stat-label">7-day avg</div>
+        <div class="stat-value accent" id="ds-avg">—</div>
+        <div class="stat-sub" id="ds-streak">log to see trend</div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-title">Goal proximity — You vs Shawn Mendes</div>
+      <div class="prog-row">
+        <div class="prog-label">
+          <span>Body fat</span>
+          <span id="prog-bf-label">15% → 10%</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill red" id="prog-bf" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-label">
+          <span>Weight trajectory</span>
+          <span id="prog-wt-label">12st 12.6 → 13st 4</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill gold" id="prog-wt" style="width:60%"></div>
+        </div>
+      </div>
+      <div class="prog-row" style="margin-bottom:0">
+        <div class="prog-label">
+          <span>Streak</span>
+          <span id="prog-streak-label">0 days logged</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" id="prog-streak" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title" id="dash-chart-title">Weight trend</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="dash-toggle" style="display:flex; gap:2px;">
+            <button class="active" onclick="toggleDashChart('weight',this)" style="background:none;border:0.5px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;">Weight</button>
+            <button onclick="toggleDashChart('bf',this)" style="background:none;border:0.5px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;">Body fat</button>
+          </div>
+          <div class="chart-range">
+            <button class="active" onclick="setChartRange(14,this)">2w</button>
+            <button onclick="setChartRange(30,this)">1m</button>
+            <button onclick="setChartRange(9999,this)">All</button>
+          </div>
+        </div>
+      </div>
+      <div id="dash-bf-legend" style="display:none; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#f0c060;"></span>Scale (corrected)</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#60c8f0;"></span>Navy estimate</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4); border-top: 1px dashed rgba(200,240,96,0.4);"></span>Goal (10.5%)</span>
+      </div>
+      <div class="chart-wrap"><canvas id="weightChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="log" class="page">
+    <div class="log-hero">
+      <h2>Morning log</h2>
+      <p id="log-date-display"></p>
+    </div>
+
+    <div class="log-grid">
+      <div class="field">
+        <label>Stone</label>
+        <input type="number" id="l-stone" placeholder="12" min="8" max="20" step="1">
+        <div class="field-unit">stone</div>
+      </div>
+      <div class="field">
+        <label>Pounds</label>
+        <input type="number" id="l-lbs" placeholder="12.6" min="0" max="13.9" step="0.1">
+        <div class="field-unit">lbs</div>
+      </div>
+    </div>
+
+    <div class="log-grid">
+      <div class="field">
+        <label>Body fat %</label>
+        <input type="number" id="l-bf" placeholder="16.8" min="5" max="40" step="0.1">
+        <div class="field-unit">% (scale reading)</div>
+      </div>
+      <div class="field">
+        <label>Calories yesterday</label>
+        <input type="number" id="l-cals" placeholder="2350" min="1000" max="6000" step="50">
+        <div class="field-unit">kcal</div>
+      </div>
+    </div>
+
+    <div class="log-grid">
+      <div class="field">
+        <label>Protein yesterday</label>
+        <input type="number" id="l-protein" placeholder="185" min="0" max="400" step="1" oninput="updateProteinHint()">
+        <div class="protein-hint" id="protein-hint">Target: 185g+</div>
+      </div>
+      <div class="field">
+        <label>Steps yesterday</label>
+        <input type="number" id="l-steps" placeholder="8000" min="0" max="50000" step="100">
+        <div class="field-unit">steps</div>
+      </div>
+    </div>
+
+    <div class="log-grid three">
+      <div class="field">
+        <label>Waist</label>
+        <input type="number" id="l-waist" placeholder="33" min="24" max="50" step="0.5">
+        <div class="field-unit">inches (optional)</div>
+      </div>
+      <div class="field">
+        <label>Chest</label>
+        <input type="number" id="l-chest" placeholder="38" min="28" max="60" step="0.5">
+        <div class="field-unit">inches (optional)</div>
+      </div>
+      <div class="field">
+        <label>Shoulders</label>
+        <input type="number" id="l-shoulders" placeholder="46" min="30" max="70" step="0.5">
+        <div class="field-unit">inches (optional)</div>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitLog()">Log this morning →</button>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="progress" class="page">
+    <div class="comparison-wrap">
+      <div class="comparison-title">You vs goal (Shawn Mendes proportions — scaled to 6'3")</div>
+      <div class="comparison-grid">
+        <div class="comp-metric">
+          <div class="comp-label">Body fat %</div>
+          <div class="comp-row">
+            <div class="comp-you">
+              <div class="comp-num" id="cp-bf-you">15.0</div>
+              <div class="comp-who">You</div>
+            </div>
+            <div class="comp-goal">
+              <div class="comp-num">10.5</div>
+              <div class="comp-who">Goal</div>
+            </div>
+          </div>
+          <div class="comp-gap" id="cp-bf-gap">4.5% to go</div>
+        </div>
+        <div class="comp-metric">
+          <div class="comp-label">Weight</div>
+          <div class="comp-row">
+            <div class="comp-you">
+              <div class="comp-num" id="cp-wt-you">12st 12</div>
+              <div class="comp-who">You</div>
+            </div>
+            <div class="comp-goal">
+              <div class="comp-num">13st 4</div>
+              <div class="comp-who">Goal</div>
+            </div>
+          </div>
+          <div class="comp-gap" id="cp-wt-gap">6lbs to gain</div>
+        </div>
+        <div class="comp-metric">
+          <div class="comp-label">Lean mass (est.)</div>
+          <div class="comp-row">
+            <div class="comp-you">
+              <div class="comp-num" id="cp-lean-you">—</div>
+              <div class="comp-who">You</div>
+            </div>
+            <div class="comp-goal">
+              <div class="comp-num">~162</div>
+              <div class="comp-who">Goal lbs</div>
+            </div>
+          </div>
+          <div class="comp-gap" id="cp-lean-gap">log to calculate</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Body fat % over time</span>
+      </div>
+      <div style="display:flex; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#f0c060;"></span>Scale (corrected −3%)</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#60c8f0;"></span>Navy estimate</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4);"></span>Goal 10.5%</span>
+      </div>
+      <div class="chart-wrap"><canvas id="bfChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Protein — daily (vs 185g target)</span>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="proteinChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Steps — daily</span>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="stepsChart"></canvas></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="progress-title">Timeline to goal (Shawn proportions)</div>
+      <div class="timeline" id="timeline">
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-circle done">✓</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-heading">You're already lean</div>
+            <div class="tl-desc">Lost significant weight from 14.5st. At 15% BF you're well ahead of average. The hard work is behind you — what's left is refinement.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-circle now">→</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-heading">Month 1–2 — Visible shoulder & back width</div>
+            <div class="tl-desc">Progressive overload on push/pull. V-taper begins to show. Waist stays tight. Scale may barely move — that's fine.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-circle">3</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-heading">Month 3 — ~12–13% body fat</div>
+            <div class="tl-desc">Upper abs visible. Face leaner. The "shirt off" casual look starts here. People will notice.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-circle">6</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-heading">Month 5–7 — Shawn range (10–11% BF)</div>
+            <div class="tl-desc">Full ab definition. Clear V-taper. Athletic but not obsessive. This is the look. Requires 185g+ protein, 3–4 gym sessions, and consistent sleep.</div>
+          </div>
+        </div>
+        <div class="tl-item" style="margin-bottom:0">
+          <div class="tl-left"><div class="tl-circle">∞</div></div>
+          <div class="tl-content">
+            <div class="tl-heading">Maintain — the real goal</div>
+            <div class="tl-desc">Sustainable lifestyle. Alcohol occasional and tracked. Sleep prioritised. At 40, this beats any 25-year-old who hasn't got their habits dialled.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NUTRITION -->
+  <div id="nutrition" class="page">
+    <div class="nut-card">
+      <div class="progress-title">Today's targets</div>
+      <div style="font-size:12px; color:var(--muted); font-family:var(--font-mono); margin-top: -4px;">6'3" · 40yo · ~81kg · adjust for activity below</div>
+      <div class="nut-big">
+        <div class="nut-item">
+          <div class="nut-num" id="nut-cals">2,350</div>
+          <div class="nut-unit">Calories</div>
+        </div>
+        <div class="nut-item">
+          <div class="nut-num" id="nut-protein">185g</div>
+          <div class="nut-unit">Protein</div>
+        </div>
+        <div class="nut-item">
+          <div class="nut-num" id="nut-carbs">245g</div>
+          <div class="nut-unit">Carbs</div>
+        </div>
+      </div>
+      <div class="select-row">
+        <select id="nut-activity" onchange="calcNutrition()">
+          <option value="rest">Rest day</option>
+          <option value="light" selected>Light activity</option>
+          <option value="gym">Gym session</option>
+          <option value="intense">Heavy training</option>
+        </select>
+        <select id="nut-phase" onchange="calcNutrition()">
+          <option value="recomp" selected>Recomp (maintain weight)</option>
+          <option value="cut">Mild cut (−0.5lb/wk)</option>
+          <option value="bulk">Lean bulk (+0.5lb/wk)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nut-card">
+      <div class="progress-title">High-protein meal structure</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+        <div style="background:var(--surface2); border-radius:var(--radius-sm); padding:12px; border:0.5px solid var(--border);">
+          <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Breakfast ~50g</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text); line-height:1.8;">3 eggs + oats<br>Greek yoghurt<br>Protein shake (opt)</div>
+        </div>
+        <div style="background:var(--surface2); border-radius:var(--radius-sm); padding:12px; border:0.5px solid var(--border);">
+          <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Lunch ~45g</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text); line-height:1.8;">Chicken breast<br>Rice + veg<br>Cottage cheese</div>
+        </div>
+        <div style="background:var(--surface2); border-radius:var(--radius-sm); padding:12px; border:0.5px solid var(--border);">
+          <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Dinner ~45g</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text); line-height:1.8;">Salmon / turkey<br>Sweet potato + greens<br>Low-fat milk</div>
+        </div>
+        <div style="background:var(--surface2); border-radius:var(--radius-sm); padding:12px; border:0.5px solid var(--border);">
+          <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Snacks ~40g</div>
+          <div style="font-size:12px; font-family:var(--font-mono); color:var(--text); line-height:1.8;">Casein shake (night)<br>Hard boiled eggs<br>Beef jerky</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nut-card" style="margin-bottom:0">
+      <div class="progress-title">Alcohol impact — by drink</div>
+      <div style="display:grid; gap:8px; margin-top:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-family:var(--font-mono); padding:10px 12px; background:var(--surface2); border-radius:var(--radius-sm); border:0.5px solid var(--border);">
+          <span style="color:var(--text);">Red wine (750ml, 13%)</span>
+          <span style="color:var(--red);">~625 kcal · 12–24hr fat pause</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-family:var(--font-mono); padding:10px 12px; background:var(--surface2); border-radius:var(--radius-sm); border:0.5px solid var(--border);">
+          <span style="color:var(--text);">Brewdog Stout 7% × 3 (440ml)</span>
+          <span style="color:var(--red);">~570 kcal · fat pause</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-family:var(--font-mono); padding:10px 12px; background:var(--surface2); border-radius:var(--radius-sm); border:0.5px solid var(--border);">
+          <span style="color:var(--text);">Weekend you just described</span>
+          <span style="color:var(--red);">~1,200 kcal total</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINING -->
+  <div id="training" class="page">
+    <div class="ex-grid">
+      <div class="ex-card top-priority">
+        <div class="ex-priority"><span class="ex-priority-dot"></span>Top priority</div>
+        <div class="ex-name">Shoulders</div>
+        <div class="ex-moves">Lateral raises<br>Overhead press<br>Face pulls</div>
+        <div class="ex-sets">3×15 / 4×8 / 3×15</div>
+      </div>
+      <div class="ex-card top-priority">
+        <div class="ex-priority"><span class="ex-priority-dot"></span>Top priority</div>
+        <div class="ex-name">Upper chest</div>
+        <div class="ex-moves">Incline bench<br>Incline DB fly<br>Cable cross H→L</div>
+        <div class="ex-sets">4×8 / 3×12 / 3×12</div>
+      </div>
+      <div class="ex-card top-priority">
+        <div class="ex-priority"><span class="ex-priority-dot"></span>Top priority</div>
+        <div class="ex-name">Lats & back</div>
+        <div class="ex-moves">Pull-ups / pulldown<br>Seated row<br>Rear delt fly</div>
+        <div class="ex-sets">4×8 / 3×10 / 3×15</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-priority"><span class="ex-priority-dot gold"></span>Important</div>
+        <div class="ex-name">Core</div>
+        <div class="ex-moves">Plank<br>Hanging knee raise<br>Cable crunch</div>
+        <div class="ex-sets">3×45s / 3×12 / 3×15</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-priority"><span class="ex-priority-dot muted"></span>Secondary</div>
+        <div class="ex-name">Arms</div>
+        <div class="ex-moves">Bicep curls<br>Tricep pushdown<br>Hammer curls</div>
+        <div class="ex-sets">3×10 / 3×12 / 3×10</div>
+      </div>
+      <div class="ex-card">
+        <div class="ex-priority"><span class="ex-priority-dot muted"></span>Secondary</div>
+        <div class="ex-name">Legs</div>
+        <div class="ex-moves">Squats<br>Romanian DL<br>Leg press</div>
+        <div class="ex-sets">4×8 / 3×10 / 3×12</div>
+      </div>
+    </div>
+
+    <div class="nut-card">
+      <div class="progress-title">Weekly split</div>
+      <div style="display:grid; gap:6px; margin-top:12px;">
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--accent);">Monday</span><span style="color:var(--text);">Push — chest, shoulders, triceps</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--accent);">Tuesday</span><span style="color:var(--text);">Pull — back, biceps, rear delts</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--muted);">Wednesday</span><span style="color:var(--muted);">Cardio / active rest + core</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--accent);">Thursday</span><span style="color:var(--text);">Push (varied exercises)</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--accent);">Friday</span><span style="color:var(--text);">Pull + legs</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0; border-bottom:0.5px solid var(--border);">
+          <span style="color:var(--muted);">Saturday</span><span style="color:var(--muted);">Optional: shoulders + core focus</span>
+        </div>
+        <div style="display:grid; grid-template-columns:60px 1fr; gap:12px; align-items:center; font-size:12px; font-family:var(--font-mono); padding:8px 0;">
+          <span style="color:var(--muted);">Sunday</span><span style="color:var(--muted);">Rest</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALIBRATE -->
+  <div id="calibrate" class="page">
+    <div class="log-hero">
+      <h2>Navy calibration</h2>
+      <p>Monthly measurement — neck & navel waist</p>
+    </div>
+
+    <div class="log-card" style="margin-bottom:12px;">
+      <div style="font-size:13px; font-family:var(--font-mono); color:var(--muted); line-height:1.8; margin-bottom:16px;">
+        Measure <strong style="color:var(--text);">neck</strong> just below the larynx (Adam's apple), and <strong style="color:var(--text);">waist</strong> at the navel, at the widest point. Stand relaxed, don't suck in. Both in inches.
+      </div>
+      <div class="log-grid">
+        <div class="field">
+          <label>Neck circumference</label>
+          <input type="number" id="c-neck" placeholder="15.5" min="10" max="25" step="0.1" oninput="previewNavy()">
+          <div class="field-unit">inches</div>
+        </div>
+        <div class="field">
+          <label>Waist at navel</label>
+          <input type="number" id="c-waist" placeholder="37.1" min="24" max="60" step="0.1" oninput="previewNavy()">
+          <div class="field-unit">inches — widest point</div>
+        </div>
+      </div>
+
+      <div id="navy-preview" style="display:none; background:var(--surface2); border-radius:var(--radius-sm); padding:16px; margin:12px 0; border:0.5px solid var(--border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+          <div>
+            <div style="font-family:var(--font-display); font-size:28px; color:#60c8f0;" id="prev-navy">—</div>
+            <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;">Navy BF%</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display); font-size:28px; color:var(--gold);" id="prev-scale">—</div>
+            <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;">Today's scale</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display); font-size:28px; color:var(--text);" id="prev-offset">—</div>
+            <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;">Correction</div>
+          </div>
+        </div>
+        <div style="font-size:11px; font-family:var(--font-mono); color:var(--muted); margin-top:12px; text-align:center;" id="prev-note"></div>
+      </div>
+
+      <button class="submit-btn" onclick="saveNavyCalibration()">Save calibration →</button>
+    </div>
+
+    <div class="section-title">Calibration history</div>
+    <div class="chart-card" id="navy-history-card">
+      <div id="navy-history-empty" style="text-align:center; padding:24px; font-family:var(--font-mono); font-size:13px; color:var(--muted);">No calibrations saved yet.</div>
+      <table class="history-table" id="navy-history-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Neck</th>
+            <th>Waist</th>
+            <th>Navy BF%</th>
+            <th>Scale then</th>
+            <th>Correction</th>
+          </tr>
+        </thead>
+        <tbody id="navy-history-body"></tbody>
+      </table>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:0;">
+      <div style="font-size:11px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">How it works</div>
+      <div style="font-size:12px; font-family:var(--font-mono); color:var(--muted); line-height:1.9;">
+        The <span style="color:#60c8f0;">Navy formula</span> gives a calibrated BF% estimate based on circumference measurements — more reliable than bioelectrical impedance scales, which vary with hydration.<br><br>
+        Your <span style="color:var(--gold);">scale correction</span> is calculated by comparing the Navy result to your scale reading on the same day. This offset is then applied to all your daily scale readings to estimate actual BF%.<br><br>
+        Current correction: <span style="color:var(--text);" id="current-correction">—</span> · Recalibrate monthly or after significant body changes.
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history" class="page">
+    <div class="chart-card" id="history-card">
+      <div id="history-empty" class="empty-state" style="display:none;">
+        <p>No entries yet. Log your first morning below.</p>
+      </div>
+      <table class="history-table" id="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Weight</th>
+            <th>BF%</th>
+            <th>Protein</th>
+            <th>Cals</th>
+            <th>Steps</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup" class="page">
+    <div class="log-hero">
+      <h2>Setup</h2>
+      <p>Google Drive sync · GitHub Pages hosting</p>
+    </div>
+
+    <div class="nut-card">
+      <div class="progress-title" style="color:#60c8f0;">Part 1 — Google Drive sync</div>
+      <div style="font-size:12px; font-family:var(--font-mono); color:var(--muted); line-height:2; margin-top:10px;">
+        Your data is stored in a private file in your Google Drive's app data folder (invisible in Drive UI, private to this app only).<br><br>
+        <span style="color:var(--text); font-weight:500;">Step 1</span> — Go to <span style="color:#60c8f0;">console.cloud.google.com</span> → New Project → name it "Form Physique"<br>
+        <span style="color:var(--text); font-weight:500;">Step 2</span> — APIs & Services → Enable APIs → search "Google Drive API" → Enable<br>
+        <span style="color:var(--text); font-weight:500;">Step 3</span> — Credentials → Create Credentials → OAuth Client ID → Web application<br>
+        &nbsp;&nbsp;· Authorised JavaScript origins: add your GitHub Pages URL e.g. <span style="color:var(--accent);">https://yourusername.github.io</span><br>
+        &nbsp;&nbsp;· Also add <span style="color:var(--accent);">http://localhost</span> for local testing<br>
+        &nbsp;&nbsp;· Copy the Client ID (ends in .apps.googleusercontent.com)<br>
+        <span style="color:var(--text); font-weight:500;">Step 4</span> — OAuth consent screen → External → add your email as test user → add scope <span style="color:var(--accent);">drive.appdata</span><br>
+        <span style="color:var(--text); font-weight:500;">Step 5</span> — Open index.html in a text editor, find <span style="color:var(--accent);">const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'</span> and paste your Client ID<br>
+        <span style="color:var(--text); font-weight:500;">Step 6</span> — Open the app from your GitHub Pages URL → click Connect Drive → authorise → done ✓
+      </div>
+    </div>
+
+    <div class="nut-card">
+      <div class="progress-title" style="color:var(--accent);">Part 2 — GitHub Pages hosting</div>
+      <div style="font-size:12px; font-family:var(--font-mono); color:var(--muted); line-height:2; margin-top:10px;">
+        <span style="color:var(--text); font-weight:500;">Step 1</span> — Go to <span style="color:var(--accent);">github.com</span> → Sign up or sign in<br>
+        <span style="color:var(--text); font-weight:500;">Step 2</span> — Click + → New repository → name it <span style="color:var(--accent);">form</span> → set <strong style="color:var(--text);">Private</strong> → ✓ Add README → Create<br>
+        <span style="color:var(--text); font-weight:500;">Step 3</span> — Add file → Upload files → upload this file renamed as <span style="color:var(--accent);">index.html</span> → Commit<br>
+        <span style="color:var(--text); font-weight:500;">Step 4</span> — Settings → Pages → Source: Deploy from branch → main / root → Save<br>
+        <span style="color:var(--text); font-weight:500;">Step 5</span> — Wait ~60s → your URL: <span style="color:var(--accent);">https://yourusername.github.io/form</span><br>
+        <span style="color:var(--text); font-weight:500;">On iPhone</span> — open URL in Safari → Share → Add to Home Screen → app icon with no browser chrome<br>
+        <span style="color:var(--text); font-weight:500;">To update</span> — GitHub repo → index.html → Edit pencil → paste new code → Commit. Live in ~30 seconds.
+      </div>
+    </div>
+
+    <div class="nut-card" style="margin-bottom:0;">
+      <div class="progress-title" style="color:var(--gold);">Privacy</div>
+      <div style="font-size:12px; font-family:var(--font-mono); color:var(--muted); line-height:1.9; margin-top:10px;">
+        · GitHub Pages serves static files only — no server ever sees your data<br>
+        · Drive data sits in your own appDataFolder — only this app can read it<br>
+        · Keep your repo <strong style="color:var(--text);">Private</strong> so only you can see the source<br>
+        · Your OAuth Client ID is safe to embed — scoped to appdata only<br>
+        · localStorage always acts as a local backup regardless of Drive status
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Replace with your Google OAuth Client ID after following setup guide
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+const DRIVE_FILE_NAME  = 'form-physique-data.json';
+const SCOPES           = 'https://www.googleapis.com/auth/drive.appdata';
+const STORE_KEY        = 'form_physique_v3'; // localStorage fallback key
+const NAVY_KEY         = 'form_navy_cals_v1';
+
+// ─── STORAGE LAYER ────────────────────────────────────────────────────────────
+// Wraps Google Drive (primary) with localStorage (fallback).
+// Drive stores data in appDataFolder — private to this app, invisible in Drive UI.
+
+let driveFileId   = null;  // cached once found/created
+let accessToken   = sessionStorage.getItem('gd_token') || null;
+let driveReady    = false; // true once we've confirmed Drive is working
+let pendingSave   = null;  // debounce handle
+
+// Status indicator
+function setStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--muted)';
+}
+
+// ── OAuth ─────────────────────────────────────────────────────────────────────
+function signInWithGoogle() {
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    alert('Google Drive not configured yet.\n\nSee the Setup tab for instructions.\n\nYour data is being saved locally in the meantime.');
+    return;
+  }
+  const params = new URLSearchParams({
+    client_id:     GOOGLE_CLIENT_ID,
+    redirect_uri:  window.location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
+    scope:         SCOPES,
+    prompt:        'consent',
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function handleOAuthCallback() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token  = params.get('access_token');
+  if (!token) return;
+  accessToken = token;
+  sessionStorage.setItem('gd_token', token);
+  // Clean URL
+  history.replaceState(null, '', window.location.pathname);
+  setStatus('Drive connected ✓', 'var(--accent)');
+}
+
+// ── Drive API helpers ─────────────────────────────────────────────────────────
+async function driveRequest(url, options = {}) {
+  if (!accessToken) throw new Error('no token');
+  const res = await fetch(url, {
+    ...options,
+    headers: { Authorization: 'Bearer ' + accessToken, ...(options.headers || {}) },
+  });
+  if (res.status === 401) { accessToken = null; sessionStorage.removeItem('gd_token'); throw new Error('auth'); }
+  if (!res.ok) throw new Error('drive_error ' + res.status);
+  return res;
+}
+
+async function findOrCreateFile(name) {
+  // Search in appDataFolder
+  const q    = encodeURIComponent(`name='${name}' and trashed=false`);
+  const list = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&spaces=appDataFolder&fields=files(id,name)`
+  );
+  const data = await list.json();
+  if (data.files && data.files.length > 0) return data.files[0].id;
+
+  // Create new empty file
+  const meta = JSON.stringify({ name, parents: ['appDataFolder'] });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file',     new Blob(['{}'],  { type: 'application/json' }));
+  const created = await driveRequest(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    { method: 'POST', body: form }
+  );
+  const { id } = await created.json();
+  return id;
+}
+
+async function readDriveFile(fileId) {
+  const res  = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
+  );
+  return res.json();
+}
+
+async function writeDriveFile(fileId, payload) {
+  await driveRequest(
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+  );
+}
+
+// ── High-level load / save ────────────────────────────────────────────────────
+async function loadFromDrive() {
+  try {
+    driveFileId  = await findOrCreateFile(DRIVE_FILE_NAME);
+    const stored = await readDriveFile(driveFileId);
+    driveReady   = true;
+    setStatus('Drive synced ✓', 'var(--accent)');
+    return stored; // { entries, navyCals }
+  } catch (e) {
+    driveReady = false;
+    if (e.message === 'auth') setStatus('Sign in for Drive sync', 'var(--muted)');
+    else setStatus('Drive unavailable — local only', 'var(--muted)');
+    return null;
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(pendingSave);
+  pendingSave = setTimeout(persistAll, 800);
+}
+
+async function persistAll() {
+  // Always save to localStorage as safety net
+  localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+  localStorage.setItem(NAVY_KEY,  JSON.stringify(navyCals));
+
+  if (!driveReady || !driveFileId) return;
+  try {
+    setStatus('Saving…', 'var(--muted)');
+    await writeDriveFile(driveFileId, { entries, navyCals });
+    setStatus('Saved to Drive ✓', 'var(--accent)');
+  } catch (e) {
+    setStatus('Save failed — stored locally', 'var(--red)');
+  }
+}
+
+// ── localStorage fallback ─────────────────────────────────────────────────────
+function loadLocal() {
+  try {
+    const e = JSON.parse(localStorage.getItem(STORE_KEY)) || [];
+    const n = JSON.parse(localStorage.getItem(NAVY_KEY))  || [];
+    return { entries: e, navyCals: n };
+  } catch { return { entries: [], navyCals: [] }; }
+}
+
+// ── Alias saveData / saveNavyCals to scheduleSave ─────────────────────────────
+function saveData(_)    { scheduleSave(); }
+function saveNavyCals(_){ scheduleSave(); }
+
+// ─── BOOTSTRAP ────────────────────────────────────────────────────────────────
+let entries  = [];
+let navyCals = [];
+
+async function bootstrap() {
+  handleOAuthCallback();
+
+  // Load local first so UI is immediately populated
+  const local = loadLocal();
+  entries  = local.entries;
+  navyCals = local.navyCals;
+
+  // Then try Drive — overwrite with cloud data if available
+  if (accessToken) {
+    setStatus('Connecting to Drive…', 'var(--muted)');
+    const cloud = await loadFromDrive();
+    if (cloud && cloud.entries && cloud.entries.length > 0) {
+      entries  = cloud.entries;
+      navyCals = cloud.navyCals || navyCals;
+      // Sync local to match cloud
+      localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+      localStorage.setItem(NAVY_KEY,  JSON.stringify(navyCals));
+    } else if (driveReady && entries.length > 0) {
+      // Cloud file is empty — push local data up
+      await persistAll();
+    }
+  } else if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    setStatus('Local only — see Setup tab to enable Drive', 'var(--muted)');
+  } else {
+    setStatus('Sign in for Drive sync →', 'var(--muted)');
+  }
+
+  applySeeds();
+  initApp();
+}
+
+function loadData()     { return entries; }  // legacy compat
+
+// ─── SEED data from user's Google Sheets ─────────────────────────────────────
+const seedData = [
+  // January 2026
+  {date:'2026-01-20',stone:13,lbs:0.4,bf:17.4,cals:2249,protein:178,steps:6288},
+  {date:'2026-01-21',stone:13,lbs:0.2,bf:17.2,cals:2397,protein:154,steps:8221},
+  {date:'2026-01-22',stone:12,lbs:12.4,bf:16.9,cals:2204,protein:137,steps:3920},
+  {date:'2026-01-23',stone:12,lbs:13.6,bf:17.3,cals:null,protein:null,steps:9988},
+  {date:'2026-01-24',stone:12,lbs:13.1,bf:16.5,cals:null,protein:null,steps:5780},
+  {date:'2026-01-25',stone:null,lbs:null,bf:null,cals:2092,protein:120,steps:9833},
+  {date:'2026-01-26',stone:13,lbs:2.6,bf:17.5,cals:2488,protein:138,steps:8876},
+  {date:'2026-01-27',stone:12,lbs:13.7,bf:17,cals:2260,protein:116,steps:5347},
+  {date:'2026-01-28',stone:13,lbs:0,bf:17.1,cals:2702,protein:193,steps:8104},
+  {date:'2026-01-29',stone:12,lbs:12.9,bf:16.9,cals:2381,protein:139,steps:6899},
+  {date:'2026-01-30',stone:12,lbs:13.1,bf:17.1,cals:null,protein:null,steps:null},
+  {date:'2026-01-31',stone:12,lbs:12.9,bf:16.8,cals:null,protein:null,steps:9427},
+  // February 2026
+  {date:'2026-02-02',stone:13,lbs:0.9,bf:17,cals:1957,protein:143,steps:9151},
+  {date:'2026-02-03',stone:12,lbs:12.6,bf:17.1,cals:2387,protein:175,steps:4181},
+  {date:'2026-02-04',stone:12,lbs:12.9,bf:17.2,cals:1872,protein:163,steps:8318},
+  {date:'2026-02-05',stone:12,lbs:11.8,bf:17.1,cals:1991,protein:181,steps:4768},
+  {date:'2026-02-06',stone:12,lbs:11.4,bf:17.1,cals:3671,protein:122,steps:8340},
+  {date:'2026-02-07',stone:12,lbs:11.4,bf:16.3,cals:null,protein:null,steps:null},
+  {date:'2026-02-10',stone:13,lbs:0.9,bf:17.4,cals:2356,protein:162,steps:10076},
+  {date:'2026-02-11',stone:13,lbs:0.2,bf:17.1,cals:2061,protein:179,steps:6051},
+  {date:'2026-02-12',stone:12,lbs:12.6,bf:17.1,cals:2177,protein:172,steps:8203},
+  {date:'2026-02-13',stone:12,lbs:11.9,bf:17.3,cals:3925,protein:161,steps:3751},
+  {date:'2026-02-14',stone:12,lbs:12.7,bf:16.9,cals:4177,protein:162,steps:13968},
+  {date:'2026-02-15',stone:12,lbs:13.8,bf:16.6,cals:2389,protein:109,steps:8076},
+  {date:'2026-02-16',stone:13,lbs:0.2,bf:16.9,cals:1839,protein:156,steps:6296},
+  {date:'2026-02-18',stone:12,lbs:13.3,bf:17.2,cals:2685,protein:117,steps:9480},
+  {date:'2026-02-19',stone:12,lbs:12.3,bf:16.8,cals:2479,protein:89,steps:4332},
+  {date:'2026-02-20',stone:12,lbs:11.3,bf:16.7,cals:3461,protein:130,steps:8365},
+  {date:'2026-02-21',stone:12,lbs:11.2,bf:16.6,cals:4067,protein:96,steps:6407},
+  {date:'2026-02-23',stone:13,lbs:0.4,bf:17,cals:2436,protein:167,steps:9567},
+  {date:'2026-02-25',stone:12,lbs:13.1,bf:16.9,cals:2891,protein:144,steps:3992},
+  {date:'2026-02-26',stone:12,lbs:12.9,bf:16.9,cals:2637,protein:164,steps:9448},
+  {date:'2026-02-27',stone:12,lbs:11.7,bf:17,cals:3693,protein:148,steps:6221},
+  {date:'2026-02-28',stone:12,lbs:11.1,bf:17,cals:2318,protein:154,steps:11928},
+  // March 2026
+  {date:'2026-03-01',stone:12,lbs:11.5,bf:16.2,cals:3025,protein:159,steps:7134},
+  {date:'2026-03-03',stone:12,lbs:12.4,bf:16.7,cals:2008,protein:138,steps:3912},
+  {date:'2026-03-05',stone:12,lbs:11.8,bf:16.6,cals:3373,protein:129,steps:8780},
+  {date:'2026-03-06',stone:12,lbs:11.1,bf:16.5,cals:null,protein:null,steps:null},
+  {date:'2026-03-09',stone:12,lbs:13.6,bf:17.2,cals:null,protein:null,steps:null},
+  {date:'2026-03-10',stone:12,lbs:12.2,bf:17,cals:null,protein:null,steps:null},
+  {date:'2026-03-12',stone:12,lbs:10.9,bf:17,cals:2252,protein:164,steps:4919},
+  {date:'2026-03-13',stone:12,lbs:10,bf:16.8,cals:3921,protein:179,steps:8417},
+  {date:'2026-03-14',stone:12,lbs:10.6,bf:16.5,cals:null,protein:null,steps:null},
+  {date:'2026-03-16',stone:12,lbs:11.4,bf:16.4,cals:1774,protein:155,steps:5889},
+  {date:'2026-03-17',stone:12,lbs:9.9,bf:16.7,cals:2525,protein:147,steps:9760},
+  {date:'2026-03-18',stone:12,lbs:9.1,bf:16.4,cals:2439,protein:142,steps:5087},
+  {date:'2026-03-23',stone:12,lbs:12,bf:16.7,cals:2395,protein:166,steps:7172},
+  {date:'2026-03-24',stone:12,lbs:10.9,bf:16.9,cals:2160,protein:170,steps:5788},
+  {date:'2026-03-25',stone:12,lbs:10.6,bf:16.7,cals:2588,protein:154,steps:8865},
+  {date:'2026-03-26',stone:12,lbs:10,bf:17,cals:2134,protein:149,steps:6487},
+  {date:'2026-03-27',stone:12,lbs:9.9,bf:16.7,cals:null,protein:null,steps:null},
+  {date:'2026-03-30',stone:12,lbs:13.1,bf:16.8,cals:2088,protein:176,steps:5605},
+  {date:'2026-03-31',stone:12,lbs:11.8,bf:16.8,cals:2328,protein:142,steps:9709},
+  // April 2026
+  {date:'2026-04-01',stone:12,lbs:11,bf:16.9,cals:2050,protein:176,steps:6337},
+  {date:'2026-04-02',stone:12,lbs:10.9,bf:16.8,cals:3761,protein:155,steps:9003},
+  {date:'2026-04-03',stone:12,lbs:11,bf:16.7,cals:null,protein:null,steps:null},
+  {date:'2026-04-06',stone:12,lbs:13.2,bf:16.5,cals:2539,protein:129,steps:10779},
+  {date:'2026-04-07',stone:12,lbs:13.9,bf:17,cals:1872,protein:127,steps:4858},
+  {date:'2026-04-08',stone:12,lbs:13.1,bf:17.1,cals:null,protein:null,steps:6711},
+  {date:'2026-04-09',stone:12,lbs:11.9,bf:16.7,cals:2247,protein:160,steps:9237},
+  {date:'2026-04-10',stone:12,lbs:11.6,bf:16.7,cals:4342,protein:155,steps:5900},
+  {date:'2026-04-11',stone:12,lbs:11.8,bf:16.6,cals:null,protein:null,steps:null},
+  {date:'2026-04-13',stone:12,lbs:12.5,bf:16.9,cals:2147,protein:149,steps:8773},
+  {date:'2026-04-14',stone:12,lbs:11.5,bf:17.1,cals:2430,protein:113,steps:9593},
+  {date:'2026-04-16',stone:12,lbs:10.6,bf:16.7,cals:2201,protein:183,steps:8534},
+  {date:'2026-04-17',stone:12,lbs:9.3,bf:16.8,cals:3339,protein:110,steps:9261},
+  {date:'2026-04-18',stone:12,lbs:9.3,bf:16.1,cals:3233,protein:177,steps:12148},
+  {date:'2026-04-19',stone:12,lbs:12.6,bf:16.6,cals:2849,protein:157,steps:9911},
+  {date:'2026-04-20',stone:12,lbs:13.8,bf:17,cals:2012,protein:166,steps:6027},
+  {date:'2026-04-21',stone:12,lbs:11.8,bf:16.8,cals:2362,protein:167,steps:8660},
+  {date:'2026-04-22',stone:12,lbs:10.1,bf:16.7,cals:2054,protein:184,steps:7476},
+  {date:'2026-04-23',stone:12,lbs:10.1,bf:16.8,cals:1821,protein:154,steps:8739},
+  {date:'2026-04-24',stone:12,lbs:8.8,bf:16.8,cals:null,protein:null,steps:null},
+];
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function toLbs(stone, lbs) { return stone * 14 + lbs; }
+function toStoneStr(totalLbs) {
+  const s = Math.floor(totalLbs / 14);
+  const l = +(totalLbs % 14).toFixed(1);
+  return `${s}st ${l}`;
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+}
+function sortedEntries() {
+  return [...entries].sort((a,b) => a.date.localeCompare(b.date));
+}
+function sortedWeightEntries() {
+  return sortedEntries().filter(e => e.stone !== null && e.lbs !== null);
+}
+
+// ─── GOALS ───────────────────────────────────────────────────────────────────
+const GOAL_BF = 10.5;
+const GOAL_WEIGHT_LBS = 186; // 13st 4
+const PROTEIN_TARGET = 185;
+const HEIGHT_IN = 75; // 6'3"
+
+// ─── SEED ─────────────────────────────────────────────────────────────────────
+function applySeeds() {
+  if (entries.length === 0) {
+    entries = [...seedData];
+    scheduleSave();
+  }
+  if (navyCals.length === 0) {
+    navyCals = [{ date: '2026-04-10', neck: 15.5, waist: 37.13, navyBF: 13.8 }];
+    scheduleSave();
+  }
+}
+
+function calcNavyBF(neck, waist) {
+  // US Navy formula for men (inches)
+  const val = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(HEIGHT_IN)) - 450;
+  return +val.toFixed(1);
+}
+
+function getLatestCorrection() {
+  // Returns the offset: navy - scale reading at closest date
+  if (navyCals.length === 0) return -3.0; // fallback
+  const latest = navyCals[navyCals.length - 1];
+  // Find scale reading closest to Navy measurement date
+  const sorted = sortedEntries().filter(e => e.bf);
+  if (sorted.length === 0) return -3.0;
+  const closest = sorted.reduce((a, b) =>
+    Math.abs(new Date(b.date) - new Date(latest.date)) < Math.abs(new Date(a.date) - new Date(latest.date)) ? b : a
+  );
+  return +(latest.navyBF - closest.bf).toFixed(2);
+}
+
+function actualBF(reading) {
+  const correction = getLatestCorrection();
+  return +(reading + correction).toFixed(1);
+}
+
+// Navy BF estimated from scale reading using current correction
+function navyEstFromScale(reading) { return actualBF(reading); }
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+let weightChart, bfChart, proteinChart, stepsChart;
+let chartRange = 14;
+let chartsInitialised = false;
+let dashChartMode = 'weight'; // 'weight' or 'bf'
+
+Chart.defaults.color = '#7a7875';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+Chart.defaults.animation = false;
+Chart.defaults.animations = {};
+Chart.defaults.transitions = {};
+
+const gridColor = 'rgba(255,255,255,0.04)';
+const tickColor = '#7a7875';
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#1e1e21',
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 0.5,
+    titleColor: '#f0ede8',
+    bodyColor: '#7a7875',
+    padding: 10,
+    callbacks: {
+      label: ctx => {
+        const ds = ctx.dataset;
+        if (ds.label === 'Navy BF') return ' Navy est: ' + ctx.parsed.y + '%';
+        if (ds.label === 'Scale BF') return ' Scale adj: ' + ctx.parsed.y + '%';
+        if (ds.label === 'Goal') return ' Goal: ' + ctx.parsed.y + '%';
+        if (ds.label === 'Weight') return ' Weight: ' + ctx.parsed.y + ' lbs';
+        return ' ' + ctx.parsed.y;
+      }
+    }
+  }},
+  scales: {
+    x: { grid: { color: gridColor }, ticks: { color: tickColor, maxRotation: 0 } },
+    y: { grid: { color: gridColor }, ticks: { color: tickColor } }
+  }
+};
+
+function getChartData(days) {
+  const sorted = sortedEntries();
+  const cutoff = days < 9000
+    ? new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+    : '2000-01-01';
+  return sorted.filter(e => e.date >= cutoff);
+}
+
+// Interpolate Navy BF across all dates using known calibration points
+function getNavyLine(dates) {
+  if (navyCals.length === 0) return dates.map(() => null);
+  // For each date, use Navy BF from closest calibration + scale trend
+  const sorted = sortedEntries().filter(e => e.bf);
+  return dates.map(d => {
+    const entry = sorted.find(e => e.date === d);
+    if (!entry || !entry.bf) return null;
+    return actualBF(entry.bf);
+  });
+}
+
+function initCharts() {
+  const data = getChartData(chartRange);
+
+  if (!chartsInitialised) {
+    // Dashboard chart — weight or BF (togglable)
+    weightChart = new Chart(document.getElementById('weightChart'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Weight', borderColor: '#c8f060', backgroundColor: 'rgba(200,240,96,0.06)', borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#c8f060', tension: 0.3, fill: true, spanGaps: true, data: [] },
+        { label: 'Scale BF', borderColor: '#f0c060', backgroundColor: 'rgba(240,192,96,0.06)', borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#f0c060', tension: 0.3, fill: true, spanGaps: true, data: [], hidden: true },
+        { label: 'Navy BF', borderColor: '#60c8f0', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#60c8f0', tension: 0.3, fill: false, spanGaps: true, data: [], hidden: true, borderDash: [0] },
+        { label: 'Goal', borderColor: 'rgba(200,240,96,0.25)', borderDash: [4,4], borderWidth: 1, pointRadius: 0, fill: false, data: [], hidden: true },
+      ]},
+      options: { ...baseOpts }
+    });
+
+    // Progress page BF chart — scale adj + Navy estimate + goal line
+    bfChart = new Chart(document.getElementById('bfChart'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Scale BF', borderColor: '#f0c060', backgroundColor: 'rgba(240,192,96,0.06)', borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#f0c060', tension: 0.3, fill: true, spanGaps: true, data: [] },
+        { label: 'Navy BF', borderColor: '#60c8f0', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#60c8f0', tension: 0.3, fill: false, spanGaps: true, data: [] },
+        { label: 'Goal', borderColor: 'rgba(200,240,96,0.25)', borderDash: [4,4], borderWidth: 1, pointRadius: 0, fill: false, data: [] },
+      ]},
+      options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: {
+        display: true,
+        labels: { color: '#7a7875', font: { size: 10, family: "'DM Mono', monospace" }, boxWidth: 20, padding: 16,
+          filter: item => item.text !== 'Goal'
+        }
+      }}}
+    });
+
+    proteinChart = new Chart(document.getElementById('proteinChart'), {
+      type: 'bar',
+      data: { labels: [], datasets: [
+        { data: [], backgroundColor: [], borderRadius: 3, borderSkipped: false },
+        { type: 'line', data: [], borderColor: 'rgba(200,240,96,0.3)', borderDash: [4,4], borderWidth: 1, pointRadius: 0, fill: false }
+      ]},
+      options: { ...baseOpts }
+    });
+
+    stepsChart = new Chart(document.getElementById('stepsChart'), {
+      type: 'bar',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderRadius: 3, borderSkipped: false }] },
+      options: { ...baseOpts }
+    });
+
+    chartsInitialised = true;
+  }
+
+  // Weight data (no nulls)
+  const weightData = data.filter(e => e.stone !== null && e.lbs !== null);
+  const allLabels = data.map(e => fmtDate(e.date));
+  const navyLine = getNavyLine(data.map(e => e.date));
+
+  // Dashboard chart update
+  if (dashChartMode === 'weight') {
+    weightChart.data.labels = weightData.map(e => fmtDate(e.date));
+    weightChart.data.datasets[0].data = weightData.map(e => +toLbs(e.stone, e.lbs).toFixed(1));
+    weightChart.data.datasets[0].hidden = false;
+    weightChart.data.datasets[1].hidden = true;
+    weightChart.data.datasets[2].hidden = true;
+    weightChart.data.datasets[3].hidden = true;
+  } else {
+    weightChart.data.labels = allLabels;
+    weightChart.data.datasets[0].hidden = true;
+    weightChart.data.datasets[1].data = data.map(e => e.bf ? +actualBF(e.bf).toFixed(1) : null);
+    weightChart.data.datasets[1].hidden = false;
+    weightChart.data.datasets[2].data = navyLine;
+    weightChart.data.datasets[2].hidden = false;
+    weightChart.data.datasets[3].data = data.map(() => GOAL_BF);
+    weightChart.data.datasets[3].hidden = false;
+  }
+  weightChart.update('none');
+
+  // BF chart (progress page) — always shows both lines
+  bfChart.data.labels = allLabels;
+  bfChart.data.datasets[0].data = data.map(e => e.bf ? +actualBF(e.bf).toFixed(1) : null);
+  bfChart.data.datasets[1].data = navyLine;
+  bfChart.data.datasets[2].data = data.map(() => GOAL_BF);
+  bfChart.update('none');
+
+  proteinChart.data.labels = allLabels;
+  proteinChart.data.datasets[0].data = data.map(e => e.protein);
+  proteinChart.data.datasets[0].backgroundColor = data.map(e => e.protein >= PROTEIN_TARGET ? 'rgba(200,240,96,0.7)' : 'rgba(255,107,107,0.7)');
+  proteinChart.data.datasets[1].data = data.map(() => PROTEIN_TARGET);
+  proteinChart.update('none');
+
+  stepsChart.data.labels = allLabels;
+  stepsChart.data.datasets[0].data = data.map(e => e.steps);
+  stepsChart.data.datasets[0].backgroundColor = data.map(e => (e.steps||0) >= 8000 ? 'rgba(200,240,96,0.5)' : 'rgba(122,120,117,0.3)');
+  stepsChart.update('none');
+}
+
+function setChartRange(days, btn) {
+  chartRange = days;
+  document.querySelectorAll('.chart-range button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  initCharts();
+}
+
+function toggleDashChart(mode, btn) {
+  dashChartMode = mode;
+  document.querySelectorAll('.dash-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const title = mode === 'weight' ? 'Weight trend' : 'Body fat % trend';
+  document.getElementById('dash-chart-title').textContent = title;
+  const legend = document.getElementById('dash-bf-legend');
+  legend.style.display = mode === 'bf' ? 'flex' : 'none';
+  initCharts();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function updateDashboard() {
+  const sorted = sortedWeightEntries();
+  if (sorted.length === 0) return;
+
+  const latest = sorted[sorted.length - 1];
+  const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
+
+  const totalLbs = toLbs(latest.stone, latest.lbs);
+  document.getElementById('ds-weight').textContent = `${latest.stone}st ${latest.lbs}`;
+  document.getElementById('ds-weight-sub').textContent = `${totalLbs.toFixed(1)} lbs total`;
+
+  if (prev) {
+    const prevLbs = toLbs(prev.stone, prev.lbs);
+    const delta = +(totalLbs - prevLbs).toFixed(1);
+    const el = document.getElementById('ds-weight-delta');
+    if (delta !== 0) {
+      el.textContent = (delta > 0 ? '↑' : '↓') + ' ' + Math.abs(delta) + 'lb vs prev';
+      el.className = 'stat-delta ' + (delta < 0 ? 'good' : 'bad');
+    }
+  }
+
+  if (latest.bf) {
+    const navyEst = actualBF(latest.bf);
+    document.getElementById('ds-bf').textContent = navyEst.toFixed(1) + '%';
+    document.getElementById('ds-bf-scale').textContent = `Scale: ${latest.bf}% · Goal: 10.5%`;
+    const bfDelta = prev && prev.bf ? +(actualBF(latest.bf) - actualBF(prev.bf)).toFixed(1) : null;
+    if (bfDelta !== null) {
+      const el = document.getElementById('ds-bf-delta');
+      el.textContent = (bfDelta > 0 ? '↑' : '↓') + ' ' + Math.abs(bfDelta) + '% vs prev';
+      el.className = 'stat-delta ' + (bfDelta < 0 ? 'good' : 'bad');
+    }
+    // Progress bar: from ~14% (Navy start) to 10.5% (goal)
+    const pct = Math.max(0, Math.min(100, ((14 - navyEst) / (14 - GOAL_BF)) * 100));
+    document.getElementById('prog-bf').style.width = pct + '%';
+    document.getElementById('prog-bf-label').textContent = navyEst.toFixed(1) + '% → ' + GOAL_BF + '%';
+
+    // Comparison page
+    document.getElementById('cp-bf-you').textContent = navyEst.toFixed(1);
+    const gap = +(navyEst - GOAL_BF).toFixed(1);
+    document.getElementById('cp-bf-gap').textContent = gap > 0 ? gap + '% to go' : 'Goal reached!';
+
+    // Lean mass
+    const lean = +(totalLbs * (1 - navyEst / 100)).toFixed(1);
+    document.getElementById('cp-lean-you').textContent = lean;
+    const leanGap = +(162 - lean).toFixed(1);
+    document.getElementById('cp-lean-gap').textContent = leanGap > 0 ? leanGap + 'lbs to build' : 'Goal reached!';
+  }
+
+  if (latest.protein) {
+    const p = latest.protein;
+    document.getElementById('ds-protein').textContent = p + 'g';
+    const el = document.getElementById('ds-protein-delta');
+    el.textContent = p >= PROTEIN_TARGET ? '✓ On target' : (PROTEIN_TARGET - p) + 'g below target';
+    el.className = 'stat-delta ' + (p >= PROTEIN_TARGET ? 'good' : 'bad');
+  }
+
+  // Weight progress bar
+  const wtPct = Math.max(0, Math.min(100, ((totalLbs - 180) / (GOAL_WEIGHT_LBS - 180)) * 100));
+  document.getElementById('prog-wt').style.width = wtPct + '%';
+  document.getElementById('prog-wt-label').textContent = toStoneStr(totalLbs) + ' → ' + toStoneStr(GOAL_WEIGHT_LBS);
+
+  // Comparison weight
+  document.getElementById('cp-wt-you').textContent = `${latest.stone}st ${latest.lbs}`;
+  const wtGap = +(GOAL_WEIGHT_LBS - totalLbs).toFixed(0);
+  document.getElementById('cp-wt-gap').textContent = wtGap > 0 ? wtGap + 'lbs to gain' : 'At goal weight!';
+
+  // 7-day average (weight entries only)
+  const last7 = sorted.slice(-7);
+  const avg7 = last7.reduce((a,e) => a + toLbs(e.stone, e.lbs), 0) / last7.length;
+  document.getElementById('ds-avg').textContent = avg7.toFixed(1) + 'lb';
+
+  // Streak (all entries)
+  const dates = sortedEntries().map(e => e.date);
+  let streak = 0;
+  let checkDate = new Date();
+  checkDate.setHours(0,0,0,0);
+  for (let i = 0; i < 60; i++) {
+    const ds = checkDate.toISOString().split('T')[0];
+    if (dates.includes(ds)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else if (i === 0) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  document.getElementById('ds-streak').textContent = streak + ' day streak';
+  document.getElementById('prog-streak').style.width = Math.min(100, streak * 3.33) + '%';
+  document.getElementById('prog-streak-label').textContent = streak + ' days logged';
+}
+
+// ─── HISTORY TABLE ────────────────────────────────────────────────────────────
+function updateHistory() {
+  const sorted = sortedEntries().reverse();
+  const tbody = document.getElementById('history-body');
+  if (sorted.length === 0) {
+    document.getElementById('history-empty').style.display = 'block';
+    document.getElementById('history-table').style.display = 'none';
+    return;
+  }
+  document.getElementById('history-empty').style.display = 'none';
+  document.getElementById('history-table').style.display = 'table';
+
+  tbody.innerHTML = sorted.map((e, i) => {
+    const next = sorted[i + 1];
+    const lbs = toLbs(e.stone, e.lbs);
+    const prevLbs = next ? toLbs(next.stone, next.lbs) : lbs;
+    const delta = +(lbs - prevLbs).toFixed(1);
+    const deltaStr = delta !== 0 ? (delta > 0 ? '+' : '') + delta : '';
+    const deltaClass = delta < 0 ? 'good' : (delta > 0 ? 'bad' : '');
+    const proteinOk = e.protein >= PROTEIN_TARGET;
+    const bfStr = e.bf ? actualBF(e.bf).toFixed(1) + '%' : '—';
+    const proteinStr = e.protein ? `<span class="pill ${proteinOk ? 'green' : 'red'}">${e.protein}g</span>` : '—';
+    const stepsStr = e.steps ? `<span class="pill ${e.steps >= 8000 ? 'green' : 'gold'}">${(e.steps/1000).toFixed(1)}k</span>` : '—';
+    return `<tr>
+      <td>${fmtDate(e.date)}</td>
+      <td>${e.stone}st ${e.lbs} <span class="stat-delta ${deltaClass}" style="font-size:11px;">${deltaStr}</span></td>
+      <td>${bfStr}</td>
+      <td>${proteinStr}</td>
+      <td>${e.cals ? e.cals.toLocaleString() : '—'}</td>
+      <td>${stepsStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── PROTEIN HINT ─────────────────────────────────────────────────────────────
+function updateProteinHint() {
+  const val = parseFloat(document.getElementById('l-protein').value);
+  const hint = document.getElementById('protein-hint');
+  if (!val) { hint.textContent = 'Target: 185g+'; hint.style.color = 'var(--muted)'; return; }
+  if (val >= PROTEIN_TARGET) {
+    hint.textContent = '✓ On target';
+    hint.style.color = 'var(--accent)';
+  } else {
+    hint.textContent = (PROTEIN_TARGET - val) + 'g below target';
+    hint.style.color = 'var(--red)';
+  }
+}
+
+// ─── LOG SUBMIT ───────────────────────────────────────────────────────────────
+function submitLog() {
+  const stone = parseInt(document.getElementById('l-stone').value);
+  const lbs = parseFloat(document.getElementById('l-lbs').value);
+
+  if (!stone || isNaN(lbs)) {
+    alert('Please enter at least your weight (stone + lbs).');
+    return;
+  }
+
+  const entry = {
+    date: today(),
+    stone,
+    lbs,
+    bf: parseFloat(document.getElementById('l-bf').value) || null,
+    cals: parseInt(document.getElementById('l-cals').value) || null,
+    protein: parseInt(document.getElementById('l-protein').value) || null,
+    steps: parseInt(document.getElementById('l-steps').value) || null,
+    waist: parseFloat(document.getElementById('l-waist').value) || null,
+    chest: parseFloat(document.getElementById('l-chest').value) || null,
+    shoulders: parseFloat(document.getElementById('l-shoulders').value) || null,
+  };
+
+  // Remove existing entry for today
+  entries = entries.filter(e => e.date !== today());
+  entries.push(entry);
+  saveData(entries);
+
+  // Determine celebration
+  const protein = entry.protein;
+  const bf = entry.bf ? actualBF(entry.bf) : null;
+  let icon = '💪';
+  let title = 'Logged.';
+  let sub = 'Keep going. The form is coming.';
+
+  if (protein >= PROTEIN_TARGET && bf && bf < 13) {
+    icon = '🔥'; title = 'Outstanding.'; sub = 'Protein nailed. BF dropping. You\'re in the zone.';
+  } else if (protein >= PROTEIN_TARGET) {
+    icon = '✅'; title = 'Protein hit.'; sub = 'That\'s the muscle you\'re building right there.';
+  } else if (protein && protein < 150) {
+    icon = '⚡'; title = 'Logged.'; sub = 'Protein was low yesterday — push to 185g today.';
+  } else if (bf && bf < 13) {
+    icon = '📉'; title = 'BF dropping.'; sub = 'Body fat is moving in the right direction. Keep it up.';
+  }
+
+  document.getElementById('cel-icon').textContent = icon;
+  document.getElementById('cel-title').textContent = title;
+  document.getElementById('cel-sub').textContent = sub;
+
+  // Confetti for good days
+  if (protein >= PROTEIN_TARGET) launchConfetti();
+
+  document.getElementById('celebrate').classList.add('show');
+
+  // Clear form
+  ['l-stone','l-lbs','l-bf','l-cals','l-protein','l-steps','l-waist','l-chest','l-shoulders']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('protein-hint').textContent = 'Target: 185g+';
+  document.getElementById('protein-hint').style.color = 'var(--muted)';
+
+  // Refresh all
+  updateDashboard();
+  updateHistory();
+  initCharts();
+}
+
+function dismissCelebrate() {
+  document.getElementById('celebrate').classList.remove('show');
+  document.getElementById('confetti-canvas').style.display = 'none';
+}
+
+// ─── CONFETTI ─────────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const pieces = Array.from({length: 80}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height,
+    w: Math.random() * 8 + 4,
+    h: Math.random() * 4 + 2,
+    color: ['#c8f060','#f0c060','#60c8f0','#f060c8','#ffffff'][Math.floor(Math.random()*5)],
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2,
+    vx: (Math.random() - 0.5) * 2,
+    vy: Math.random() * 3 + 2,
+    alpha: 1,
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+      if (frame > 80) p.alpha -= 0.015;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 160) requestAnimationFrame(draw);
+    else { ctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display='none'; }
+  }
+  draw();
+}
+
+// ─── NUTRITION ────────────────────────────────────────────────────────────────
+function calcNutrition() {
+  const activity = document.getElementById('nut-activity').value;
+  const phase = document.getElementById('nut-phase').value;
+  const bmr = 1950;
+  const mult = {rest:1.2, light:1.375, gym:1.55, intense:1.725};
+  let tdee = Math.round(bmr * mult[activity]);
+  if (phase === 'cut') tdee -= 300;
+  if (phase === 'bulk') tdee += 250;
+  const protein = 185;
+  const carbs = Math.round(((tdee - protein * 4) * 0.65) / 4);
+  document.getElementById('nut-cals').textContent = tdee.toLocaleString();
+  document.getElementById('nut-protein').textContent = protein + 'g';
+  document.getElementById('nut-carbs').textContent = carbs + 'g';
+}
+
+// ─── NAVY CALIBRATION FUNCTIONS ───────────────────────────────────────────────
+function previewNavy() {
+  const neck = parseFloat(document.getElementById('c-neck').value);
+  const waist = parseFloat(document.getElementById('c-waist').value);
+  const preview = document.getElementById('navy-preview');
+  if (!neck || !waist || waist <= neck) { preview.style.display = 'none'; return; }
+
+  const navyBF = calcNavyBF(neck, waist);
+  document.getElementById('prev-navy').textContent = navyBF.toFixed(1) + '%';
+  preview.style.display = 'block';
+
+  // Find today's scale reading
+  const sorted = sortedEntries().filter(e => e.bf);
+  if (sorted.length > 0) {
+    const latest = sorted[sorted.length - 1];
+    document.getElementById('prev-scale').textContent = latest.bf.toFixed(1) + '%';
+    const offset = +(navyBF - latest.bf).toFixed(1);
+    document.getElementById('prev-offset').textContent = (offset > 0 ? '+' : '') + offset + '%';
+    const prev = getLatestCorrection();
+    const change = +(offset - prev).toFixed(1);
+    document.getElementById('prev-note').textContent =
+      `Previous correction was ${prev > 0 ? '+' : ''}${prev}%. ${Math.abs(change) < 0.3 ? 'Consistent — no significant drift.' : `Change of ${change > 0 ? '+' : ''}${change}% detected.`}`;
+  }
+}
+
+function saveNavyCalibration() {
+  const neck = parseFloat(document.getElementById('c-neck').value);
+  const waist = parseFloat(document.getElementById('c-waist').value);
+  if (!neck || !waist || waist <= neck) { alert('Please enter valid neck and waist measurements.'); return; }
+
+  const navyBF = calcNavyBF(neck, waist);
+  const entry = { date: today(), neck, waist, navyBF };
+  navyCals = navyCals.filter(e => e.date !== today());
+  navyCals.push(entry);
+  saveNavyCals(navyCals);
+
+  document.getElementById('c-neck').value = '';
+  document.getElementById('c-waist').value = '';
+  document.getElementById('navy-preview').style.display = 'none';
+
+  updateNavyHistory();
+  updateDashboard();
+  initCharts();
+  alert(`Saved! Navy BF: ${navyBF}%. Correction updated to ${getLatestCorrection() > 0 ? '+' : ''}${getLatestCorrection()}%.`);
+}
+
+function updateNavyHistory() {
+  const sorted = [...navyCals].sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('navy-history-body');
+  const empty = document.getElementById('navy-history-empty');
+  const table = document.getElementById('navy-history-table');
+
+  // Update current correction display
+  const corr = getLatestCorrection();
+  const corrEl = document.getElementById('current-correction');
+  if (corrEl) corrEl.textContent = (corr > 0 ? '+' : '') + corr + '%';
+
+  if (sorted.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+
+  const scaleEntries = sortedEntries().filter(e => e.bf);
+  tbody.innerHTML = sorted.map(cal => {
+    const closest = scaleEntries.length > 0 ? scaleEntries.reduce((a,b) =>
+      Math.abs(new Date(b.date) - new Date(cal.date)) < Math.abs(new Date(a.date) - new Date(cal.date)) ? b : a
+    ) : null;
+    const scaleBF = closest ? closest.bf.toFixed(1) + '%' : '—';
+    const offset = closest ? +( cal.navyBF - closest.bf).toFixed(1) : null;
+    const offStr = offset !== null ? `<span class="pill ${Math.abs(offset) < 4 ? 'gold' : 'red'}">${offset > 0 ? '+' : ''}${offset}%</span>` : '—';
+    return `<tr>
+      <td>${fmtDate(cal.date)}</td>
+      <td style="color:var(--muted)">${cal.neck}"</td>
+      <td style="color:var(--muted)">${cal.waist}"</td>
+      <td style="color:#60c8f0">${cal.navyBF}%</td>
+      <td style="color:var(--gold)">${scaleBF}</td>
+      <td>${offStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('header-date').innerHTML =
+    new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) +
+    '<br><span style="color:var(--muted)">Manchester</span>';
+
+  document.getElementById('log-date-display').textContent =
+    new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+
+  updateDashboard();
+  updateHistory();
+  updateNavyHistory();
+  initCharts();
+}
+
+bootstrap();
+</script>
+</body>
+</html>
