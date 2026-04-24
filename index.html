@@ -693,6 +693,83 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  /* Metric modal */
+  .metric-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 400;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .metric-modal.show { display: flex; }
+  .metric-modal-inner {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 560px;
+    animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-meta {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .modal-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .modal-stat {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .modal-stat-val {
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .modal-stat-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .modal-chart-wrap { position: relative; height: 180px; width: 100%; }
+  .comp-metric { cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+  .comp-metric:hover { border-color: rgba(200,240,96,0.3); transform: translateY(-1px); }
+
   @media (max-width: 600px) {
     .stats-row { grid-template-columns: 1fr 1fr; }
     .log-grid { grid-template-columns: 1fr; }
@@ -701,12 +778,41 @@
     .ex-grid { grid-template-columns: 1fr; }
     .nut-big { grid-template-columns: 1fr; }
     .nav button { font-size: 11px; padding: 7px 6px; }
+    .modal-stats { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
 
 <canvas id="confetti-canvas"></canvas>
+
+<!-- METRIC DRILL-DOWN MODAL -->
+<div class="metric-modal" id="metric-modal" onclick="closeMetricModal(event)">
+  <div class="metric-modal-inner">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">—</div>
+      <button class="modal-close" onclick="closeMetricModal(null)">✕</button>
+    </div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <div class="modal-stats">
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-current" style="color:var(--gold);">—</div>
+        <div class="modal-stat-label">Current</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-goal" style="color:var(--accent);">—</div>
+        <div class="modal-stat-label">Goal</div>
+      </div>
+      <div class="modal-stat">
+        <div class="modal-stat-val" id="modal-gap" style="color:var(--text);">—</div>
+        <div class="modal-stat-label">Remaining</div>
+      </div>
+    </div>
+    <div class="modal-chart-wrap">
+      <canvas id="modal-chart"></canvas>
+    </div>
+  </div>
+</div>
 
 <div class="celebrate" id="celebrate">
   <div class="celebrate-inner">
@@ -901,7 +1007,7 @@
       </div>
 
       <div class="comparison-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('swr')">
           <div class="comp-label">Shoulder : Waist</div>
           <div class="comp-row">
             <div class="comp-you"><div class="comp-num" id="cp-swr-you">—</div><div class="comp-who">You</div></div>
@@ -909,7 +1015,7 @@
           </div>
           <div class="comp-gap" id="cp-swr-gap">log measurements</div>
         </div>
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('whr')">
           <div class="comp-label">Waist : Height</div>
           <div class="comp-row">
             <div class="comp-you"><div class="comp-num" id="cp-whr-you">0.47</div><div class="comp-who">You</div></div>
@@ -917,7 +1023,7 @@
           </div>
           <div class="comp-gap" id="cp-whr-gap">~4" waist to lose</div>
         </div>
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('bf')">
           <div class="comp-label">Body fat %</div>
           <div class="comp-row">
             <div class="comp-you"><div class="comp-num" id="cp-bf-you">13.8</div><div class="comp-who">You (Navy)</div></div>
@@ -925,7 +1031,7 @@
           </div>
           <div class="comp-gap" id="cp-bf-gap">~2.8% to go</div>
         </div>
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('weight')">
           <div class="comp-label">Weight</div>
           <div class="comp-row">
             <div class="comp-you"><div class="comp-num" id="cp-wt-you">12st 8</div><div class="comp-who">You</div></div>
@@ -933,7 +1039,7 @@
           </div>
           <div class="comp-gap" id="cp-wt-gap">~9lbs to lose</div>
         </div>
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('lean')">
           <div class="comp-label">Lean mass (est.)</div>
           <div class="comp-row">
             <div class="comp-you"><div class="comp-num" id="cp-lean-you">—</div><div class="comp-who">You</div></div>
@@ -941,7 +1047,7 @@
           </div>
           <div class="comp-gap" id="cp-lean-gap">log to calculate</div>
         </div>
-        <div class="comp-metric">
+        <div class="comp-metric" onclick="openMetricModal('overall')">
           <div class="comp-label">Overall progress</div>
           <div class="comp-row" style="justify-content:center;">
             <div class="comp-you" style="text-align:center;">
@@ -971,7 +1077,7 @@
       <div style="display:flex; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
         <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#f0c060;"></span>Scale (corrected −3%)</span>
         <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#60c8f0;"></span>Navy estimate</span>
-        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4);"></span>Goal 10.5%</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4);"></span>Goal 11%</span>
       </div>
       <div class="chart-wrap"><canvas id="bfChart"></canvas></div>
     </div>
@@ -1877,8 +1983,10 @@ function updateDashboard() {
     // Lean mass
     const lean = +(totalLbs * (1 - navyEst / 100)).toFixed(1);
     document.getElementById('cp-lean-you').textContent = lean;
-    const leanGap = +(GOAL_LEAN_LBS - lean).toFixed(1);
-    document.getElementById('cp-lean-gap').textContent = leanGap > 0 ? leanGap + 'lbs to build' : 'Goal reached!';
+    const leanGap = +(lean - GOAL_LEAN_LBS).toFixed(1);
+    document.getElementById('cp-lean-gap').textContent = leanGap >= 0
+      ? 'maintain — don\'t lose muscle'
+      : Math.abs(leanGap).toFixed(1) + 'lbs lean mass to build';
   }
 
   // Waist, chest, shoulders — pull from most recent entry that has them
@@ -2221,6 +2329,201 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (btn) btn.classList.add('active');
+}
+
+// ─── METRIC MODAL ─────────────────────────────────────────────────────────────
+let modalChart = null;
+
+function openMetricModal(metric) {
+  const sorted = sortedEntries();
+  const weightSorted = sortedWeightEntries();
+
+  // Config per metric
+  const configs = {
+    bf: {
+      title: 'Body fat %',
+      meta: 'Navy-estimated (scale reading − 3% correction) · Goal: ~11%',
+      goal: 11,
+      goalLabel: '11%',
+      color: '#f0c060',
+      data: sorted.filter(e => e.bf).map(e => ({ x: fmtDate(e.date), y: +actualBF(e.bf).toFixed(1) })),
+      format: v => v.toFixed(1) + '%',
+      goodDirection: 'down',
+    },
+    weight: {
+      title: 'Weight',
+      meta: 'Daily weigh-in · Goal range: ~11st 13 (167lbs)',
+      goal: 167,
+      goalLabel: '167lb',
+      color: '#c8f060',
+      data: weightSorted.map(e => ({ x: fmtDate(e.date), y: +toLbs(e.stone, e.lbs).toFixed(1) })),
+      format: v => toStoneStr(v),
+      goodDirection: 'down',
+    },
+    lean: {
+      title: 'Lean mass (est.)',
+      meta: 'Total weight × (1 − Navy BF%) · Goal: ~149lbs',
+      goal: 149,
+      goalLabel: '149lb',
+      color: '#a78bfa',
+      data: sorted.filter(e => e.bf && e.stone).map(e => {
+        const lbs = toLbs(e.stone, e.lbs);
+        return { x: fmtDate(e.date), y: +(lbs * (1 - actualBF(e.bf) / 100)).toFixed(1) };
+      }),
+      format: v => v.toFixed(1) + 'lb',
+      goodDirection: 'stable',
+    },
+    whr: {
+      title: 'Waist : Height ratio',
+      meta: 'Waist (slimmest point) ÷ 75" · Goal: 0.41 (~31" waist)',
+      goal: 0.41,
+      goalLabel: '0.41',
+      color: '#60c8f0',
+      data: sorted.filter(e => e.waist).map(e => ({ x: fmtDate(e.date), y: +(e.waist / 75).toFixed(3) })),
+      format: v => v.toFixed(3),
+      goodDirection: 'down',
+    },
+    swr: {
+      title: 'Shoulder : Waist ratio',
+      meta: 'Shoulders ÷ waist · Goal: 1.60 (Shawn\'s V-taper)',
+      goal: 1.60,
+      goalLabel: '1.60',
+      color: '#f060c8',
+      data: sorted.filter(e => e.shoulders && e.waist).map(e => ({ x: fmtDate(e.date), y: +(e.shoulders / e.waist).toFixed(3) })),
+      format: v => v.toFixed(2),
+      goodDirection: 'up',
+    },
+    overall: {
+      title: 'Overall progress',
+      meta: 'Average of BF% progress + waist:height ratio progress',
+      goal: 100,
+      goalLabel: '100%',
+      color: '#c8f060',
+      data: sorted.filter(e => e.bf && e.waist).map(e => {
+        const bfPct  = Math.max(0, Math.min(100, ((14 - actualBF(e.bf)) / (14 - GOAL_BF)) * 100));
+        const whrPct = Math.max(0, Math.min(100, ((0.47 - e.waist / 75) / (0.47 - 0.41)) * 100));
+        return { x: fmtDate(e.date), y: +((bfPct + whrPct) / 2).toFixed(1) };
+      }),
+      format: v => v.toFixed(0) + '%',
+      goodDirection: 'up',
+    },
+  };
+
+  const cfg = configs[metric];
+  if (!cfg) return;
+
+  // Populate header
+  document.getElementById('modal-title').textContent = cfg.title;
+  document.getElementById('modal-meta').textContent = cfg.meta;
+
+  // Current, goal, gap
+  const latest = cfg.data.length > 0 ? cfg.data[cfg.data.length - 1].y : null;
+  document.getElementById('modal-current').textContent = latest !== null ? cfg.format(latest) : '—';
+  document.getElementById('modal-goal').textContent = cfg.goalLabel;
+
+  if (latest !== null) {
+    const gap = cfg.goodDirection === 'up'
+      ? cfg.goal - latest
+      : cfg.goodDirection === 'down'
+        ? latest - cfg.goal
+        : Math.abs(latest - cfg.goal);
+    const gapStr = gap <= 0
+      ? '✓ Goal reached'
+      : cfg.format(Math.abs(gap)) + (cfg.goodDirection === 'up' ? ' to gain' : cfg.goodDirection === 'down' ? ' to go' : ' off target');
+    document.getElementById('modal-gap').textContent = gapStr;
+  } else {
+    document.getElementById('modal-gap').textContent = 'No data yet';
+  }
+
+  // Destroy previous chart
+  if (modalChart) { modalChart.destroy(); modalChart = null; }
+
+  // Build chart
+  const ctx = document.getElementById('modal-chart').getContext('2d');
+  modalChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: cfg.data.map(d => d.x),
+      datasets: [
+        {
+          label: cfg.title,
+          data: cfg.data.map(d => d.y),
+          borderColor: cfg.color,
+          backgroundColor: cfg.color + '12',
+          borderWidth: 2,
+          pointRadius: cfg.data.length < 20 ? 3 : 1,
+          pointBackgroundColor: cfg.color,
+          tension: 0.3,
+          fill: true,
+          spanGaps: true,
+        },
+        {
+          label: 'Goal',
+          data: cfg.data.map(() => cfg.goal),
+          borderColor: 'rgba(200,240,96,0.3)',
+          borderDash: [4, 4],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        },
+        // Trend line (simple linear regression)
+        ...(cfg.data.length >= 5 ? [{
+          label: 'Trend',
+          data: (() => {
+            const n = cfg.data.length;
+            const xs = cfg.data.map((_, i) => i);
+            const ys = cfg.data.map(d => d.y);
+            const mx = xs.reduce((a,b) => a+b, 0) / n;
+            const my = ys.reduce((a,b) => a+b, 0) / n;
+            const slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) /
+                          xs.reduce((a, x) => a + (x - mx) ** 2, 0);
+            const intercept = my - slope * mx;
+            // Extend trend 30 days forward
+            const extended = [...cfg.data.map((_, i) => intercept + slope * i)];
+            // Pad with nulls then add future points
+            const futureCount = Math.min(8, Math.round(n * 0.3));
+            for (let i = 1; i <= futureCount; i++) extended.push(intercept + slope * (n - 1 + i));
+            return extended;
+          })(),
+          borderColor: 'rgba(255,255,255,0.15)',
+          borderDash: [2, 4],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+          spanGaps: true,
+        }] : []),
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e1e21',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 0.5,
+          titleColor: '#f0ede8',
+          bodyColor: '#7a7875',
+          padding: 10,
+          callbacks: { label: ctx => ' ' + cfg.format(ctx.parsed.y) }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a7875', maxRotation: 0, maxTicksLimit: 8 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a7875', callback: v => cfg.format(v) } }
+      }
+    }
+  });
+
+  document.getElementById('metric-modal').classList.add('show');
+}
+
+function closeMetricModal(e) {
+  if (e && e.target !== document.getElementById('metric-modal')) return;
+  document.getElementById('metric-modal').classList.remove('show');
+  if (modalChart) { modalChart.destroy(); modalChart = null; }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
