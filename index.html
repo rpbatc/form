@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -746,13 +747,13 @@
       <div class="stat-card">
         <div class="stat-label">Weight</div>
         <div class="stat-value" id="ds-weight">—</div>
-        <div class="stat-sub" id="ds-weight-sub">no data yet</div>
+        <div class="stat-sub" id="ds-weight-sub">Goal: 11st 13</div>
         <div class="stat-delta" id="ds-weight-delta"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Body fat (Navy est.)</div>
         <div class="stat-value" id="ds-bf">—</div>
-        <div class="stat-sub" id="ds-bf-scale">Scale: — · Goal: 10.5%</div>
+        <div class="stat-sub" id="ds-bf-scale">Scale: — · Goal: 11%</div>
         <div class="stat-delta" id="ds-bf-delta"></div>
       </div>
       <div class="stat-card">
@@ -817,7 +818,7 @@
       <div id="dash-bf-legend" style="display:none; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
         <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#f0c060;"></span>Scale (corrected)</span>
         <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:#60c8f0;"></span>Navy estimate</span>
-        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4); border-top: 1px dashed rgba(200,240,96,0.4);"></span>Goal (10.5%)</span>
+        <span style="font-size:11px; font-family:var(--font-mono); color:var(--muted); display:flex; align-items:center; gap:5px;"><span style="display:inline-block;width:18px;height:2px;background:rgba(200,240,96,0.4); border-top: 1px dashed rgba(200,240,96,0.4);"></span>Goal (11%)</span>
       </div>
       <div class="chart-wrap"><canvas id="weightChart"></canvas></div>
     </div>
@@ -893,49 +894,72 @@
   <!-- PROGRESS -->
   <div id="progress" class="page">
     <div class="comparison-wrap">
-      <div class="comparison-title">You vs goal (Shawn Mendes proportions — scaled to 6'3")</div>
-      <div class="comparison-grid">
+      <div class="comparison-title">Proportions — you vs Shawn Mendes physique type</div>
+
+      <div style="font-size:11px; font-family:var(--font-mono); color:var(--muted); margin-bottom:16px; line-height:1.7;">
+        These are the <em>ratios</em> that create his look — not exact measurements. Your height and frame are different; the proportions are what matter.
+      </div>
+
+      <div class="comparison-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="comp-metric">
+          <div class="comp-label">Shoulder : Waist</div>
+          <div class="comp-row">
+            <div class="comp-you"><div class="comp-num" id="cp-swr-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">1.60</div><div class="comp-who">Goal</div></div>
+          </div>
+          <div class="comp-gap" id="cp-swr-gap">log measurements</div>
+        </div>
+        <div class="comp-metric">
+          <div class="comp-label">Waist : Height</div>
+          <div class="comp-row">
+            <div class="comp-you"><div class="comp-num" id="cp-whr-you">0.47</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">0.41</div><div class="comp-who">Goal</div></div>
+          </div>
+          <div class="comp-gap" id="cp-whr-gap">~4" waist to lose</div>
+        </div>
         <div class="comp-metric">
           <div class="comp-label">Body fat %</div>
           <div class="comp-row">
-            <div class="comp-you">
-              <div class="comp-num" id="cp-bf-you">15.0</div>
-              <div class="comp-who">You</div>
-            </div>
-            <div class="comp-goal">
-              <div class="comp-num">10.5</div>
-              <div class="comp-who">Goal</div>
-            </div>
+            <div class="comp-you"><div class="comp-num" id="cp-bf-you">13.8</div><div class="comp-who">You (Navy)</div></div>
+            <div class="comp-goal"><div class="comp-num">~11</div><div class="comp-who">Goal</div></div>
           </div>
-          <div class="comp-gap" id="cp-bf-gap">4.5% to go</div>
+          <div class="comp-gap" id="cp-bf-gap">~2.8% to go</div>
         </div>
         <div class="comp-metric">
           <div class="comp-label">Weight</div>
           <div class="comp-row">
-            <div class="comp-you">
-              <div class="comp-num" id="cp-wt-you">12st 12</div>
-              <div class="comp-who">You</div>
-            </div>
-            <div class="comp-goal">
-              <div class="comp-num">13st 4</div>
-              <div class="comp-who">Goal</div>
-            </div>
+            <div class="comp-you"><div class="comp-num" id="cp-wt-you">12st 8</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">~11st 13</div><div class="comp-who">Goal range</div></div>
           </div>
-          <div class="comp-gap" id="cp-wt-gap">6lbs to gain</div>
+          <div class="comp-gap" id="cp-wt-gap">~9lbs to lose</div>
         </div>
         <div class="comp-metric">
           <div class="comp-label">Lean mass (est.)</div>
           <div class="comp-row">
-            <div class="comp-you">
-              <div class="comp-num" id="cp-lean-you">—</div>
-              <div class="comp-who">You</div>
-            </div>
-            <div class="comp-goal">
-              <div class="comp-num">~162</div>
-              <div class="comp-who">Goal lbs</div>
-            </div>
+            <div class="comp-you"><div class="comp-num" id="cp-lean-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">~149</div><div class="comp-who">Goal lbs</div></div>
           </div>
           <div class="comp-gap" id="cp-lean-gap">log to calculate</div>
+        </div>
+        <div class="comp-metric">
+          <div class="comp-label">Overall progress</div>
+          <div class="comp-row" style="justify-content:center;">
+            <div class="comp-you" style="text-align:center;">
+              <div class="comp-num" id="cp-overall" style="color:var(--accent);">—</div>
+              <div class="comp-who">to goal physique</div>
+            </div>
+          </div>
+          <div class="comp-gap" id="cp-overall-gap">based on BF + waist ratio</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; background:var(--surface2); border-radius:var(--radius-sm); padding:12px 14px; border-left:3px solid var(--accent);">
+        <div style="font-size:10px; font-family:var(--font-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">What creates his look</div>
+        <div style="font-size:12px; font-family:var(--font-mono); color:var(--muted); line-height:1.8;">
+          <span style="color:var(--text);">1.6:1 shoulder-to-waist ratio</span> — the V-taper the eye reads as athletic<br>
+          <span style="color:var(--text);">~11% body fat</span> — lean enough for definition without looking gaunt<br>
+          <span style="color:var(--text);">Wide, flat chest</span> — from shoulder width not chest bulk<br>
+          <span style="color:#60c8f0);">For you at 6'3"</span> — a ~31" waist gets you to his proportional look. His exact 30" isn't the target.
         </div>
       </div>
     </div>
@@ -1265,7 +1289,7 @@
         &nbsp;&nbsp;· Also add <span style="color:var(--accent);">http://localhost</span> for local testing<br>
         &nbsp;&nbsp;· Copy the Client ID (ends in .apps.googleusercontent.com)<br>
         <span style="color:var(--text); font-weight:500;">Step 4</span> — OAuth consent screen → External → add your email as test user → add scope <span style="color:var(--accent);">drive.appdata</span><br>
-        <span style="color:var(--text); font-weight:500;">Step 5</span> — Open index.html in a text editor, find <span style="color:var(--accent);">const GOOGLE_CLIENT_ID = '654560051166-7lsbb5t5a2l1o2qdce8o1h7aqc3auepa.apps.googleusercontent.com'</span> and paste your Client ID<br>
+        <span style="color:var(--text); font-weight:500;">Step 5</span> — Open index.html in a text editor, find <span style="color:var(--accent);">const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'</span> and paste your Client ID<br>
         <span style="color:var(--text); font-weight:500;">Step 6</span> — Open the app from your GitHub Pages URL → click Connect Drive → authorise → done ✓
       </div>
     </div>
@@ -1300,7 +1324,7 @@
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // Replace with your Google OAuth Client ID after following setup guide
-const GOOGLE_CLIENT_ID = '654560051166-7lsbb5t5a2l1o2qdce8o1h7aqc3auepa.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
 const DRIVE_FILE_NAME  = 'form-physique-data.json';
 const SCOPES           = 'https://www.googleapis.com/auth/drive.appdata';
 const STORE_KEY        = 'form_physique_v3'; // localStorage fallback key
@@ -1588,8 +1612,9 @@ function sortedWeightEntries() {
 }
 
 // ─── GOALS ───────────────────────────────────────────────────────────────────
-const GOAL_BF = 10.5;
-const GOAL_WEIGHT_LBS = 186; // 13st 4
+const GOAL_BF = 11.0;
+const GOAL_WEIGHT_LBS = 167; // 11st 13 — Shawn's 11st 11 scaled +1" to 6'3"
+const GOAL_LEAN_LBS = 149;   // 167 * 0.89
 const PROTEIN_TARGET = 185;
 const HEIGHT_IN = 75; // 6'3"
 
@@ -1832,14 +1857,14 @@ function updateDashboard() {
   if (latest.bf) {
     const navyEst = actualBF(latest.bf);
     document.getElementById('ds-bf').textContent = navyEst.toFixed(1) + '%';
-    document.getElementById('ds-bf-scale').textContent = `Scale: ${latest.bf}% · Goal: 10.5%`;
+    document.getElementById('ds-bf-scale').textContent = `Scale: ${latest.bf}% · Goal: ${GOAL_BF}%`;
     const bfDelta = prev && prev.bf ? +(actualBF(latest.bf) - actualBF(prev.bf)).toFixed(1) : null;
     if (bfDelta !== null) {
       const el = document.getElementById('ds-bf-delta');
       el.textContent = (bfDelta > 0 ? '↑' : '↓') + ' ' + Math.abs(bfDelta) + '% vs prev';
       el.className = 'stat-delta ' + (bfDelta < 0 ? 'good' : 'bad');
     }
-    // Progress bar: from ~14% (Navy start) to 10.5% (goal)
+    // Progress bar: from ~14% (Navy start) to 11% (goal)
     const pct = Math.max(0, Math.min(100, ((14 - navyEst) / (14 - GOAL_BF)) * 100));
     document.getElementById('prog-bf').style.width = pct + '%';
     document.getElementById('prog-bf-label').textContent = navyEst.toFixed(1) + '% → ' + GOAL_BF + '%';
@@ -1852,8 +1877,44 @@ function updateDashboard() {
     // Lean mass
     const lean = +(totalLbs * (1 - navyEst / 100)).toFixed(1);
     document.getElementById('cp-lean-you').textContent = lean;
-    const leanGap = +(162 - lean).toFixed(1);
+    const leanGap = +(GOAL_LEAN_LBS - lean).toFixed(1);
     document.getElementById('cp-lean-gap').textContent = leanGap > 0 ? leanGap + 'lbs to build' : 'Goal reached!';
+  }
+
+  // Waist, chest, shoulders — pull from most recent entry that has them
+  const withWaist = sortedEntries().filter(e => e.waist).slice(-1)[0];
+  const withShoulders = sortedEntries().filter(e => e.shoulders).slice(-1)[0];
+
+  // Waist-to-height ratio (height = 75")
+  if (withWaist) {
+    const whr = +(withWaist.waist / 75).toFixed(3);
+    document.getElementById('cp-whr-you').textContent = whr.toFixed(2);
+    const whGap = +(withWaist.waist - (0.41 * 75)).toFixed(1);
+    document.getElementById('cp-whr-gap').textContent = whGap > 0
+      ? whGap.toFixed(1) + '" waist to lose'
+      : 'At goal ratio!';
+  }
+
+  // Shoulder-to-waist ratio
+  if (withWaist && withShoulders) {
+    const swr = +(withShoulders.shoulders / withWaist.waist).toFixed(2);
+    document.getElementById('cp-swr-you').textContent = swr.toFixed(2);
+    const swGap = +(1.60 - swr).toFixed(2);
+    document.getElementById('cp-swr-gap').textContent = swGap > 0.02
+      ? swGap.toFixed(2) + ' ratio to go'
+      : swGap < -0.02 ? 'Exceeds goal!' : 'At goal ratio!';
+  } else if (withWaist || withShoulders) {
+    document.getElementById('cp-swr-gap').textContent = 'log both to calculate';
+  }
+
+  // Overall progress — average of BF% progress and WHR progress
+  const latestBF = sortedEntries().filter(e => e.bf).slice(-1)[0];
+  if (latestBF && withWaist) {
+    const bfPct  = Math.max(0, Math.min(100, ((14 - actualBF(latestBF.bf)) / (14 - GOAL_BF)) * 100));
+    const whrPct = Math.max(0, Math.min(100, ((0.47 - (withWaist.waist / 75)) / (0.47 - 0.41)) * 100));
+    const overall = Math.round((bfPct + whrPct) / 2);
+    document.getElementById('cp-overall').textContent = overall + '%';
+    document.getElementById('cp-overall-gap').textContent = overall >= 100 ? 'Goal reached!' : (100 - overall) + '% remaining';
   }
 
   if (latest.protein) {
@@ -1864,15 +1925,15 @@ function updateDashboard() {
     el.className = 'stat-delta ' + (p >= PROTEIN_TARGET ? 'good' : 'bad');
   }
 
-  // Weight progress bar
-  const wtPct = Math.max(0, Math.min(100, ((totalLbs - 180) / (GOAL_WEIGHT_LBS - 180)) * 100));
+  // Weight progress bar — goal is to lose to 11st 13, direction is down
+  const wtPct = Math.max(0, Math.min(100, ((180 - totalLbs) / (180 - GOAL_WEIGHT_LBS)) * 100));
   document.getElementById('prog-wt').style.width = wtPct + '%';
   document.getElementById('prog-wt-label').textContent = toStoneStr(totalLbs) + ' → ' + toStoneStr(GOAL_WEIGHT_LBS);
 
   // Comparison weight
   document.getElementById('cp-wt-you').textContent = `${latest.stone}st ${latest.lbs}`;
-  const wtGap = +(GOAL_WEIGHT_LBS - totalLbs).toFixed(0);
-  document.getElementById('cp-wt-gap').textContent = wtGap > 0 ? wtGap + 'lbs to gain' : 'At goal weight!';
+  const wtGap = +(totalLbs - GOAL_WEIGHT_LBS).toFixed(0);
+  document.getElementById('cp-wt-gap').textContent = wtGap > 0 ? wtGap + 'lbs to lose' : wtGap < 0 ? Math.abs(wtGap) + 'lbs to gain' : 'At goal weight!';
 
   // 7-day average (weight entries only)
   const last7 = sorted.slice(-7);
