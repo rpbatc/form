@@ -2014,12 +2014,17 @@ function updateDashboard() {
     document.getElementById('cp-swr-gap').textContent = 'log both to calculate';
   }
 
-  // Overall progress — average of BF% progress and WHR progress
+  // Overall progress — average of BF% progress and WHR progress (WHR optional)
   const latestBF = sortedEntries().filter(e => e.bf).slice(-1)[0];
-  if (latestBF && withWaist) {
+  if (latestBF) {
     const bfPct  = Math.max(0, Math.min(100, ((14 - actualBF(latestBF.bf)) / (14 - GOAL_BF)) * 100));
-    const whrPct = Math.max(0, Math.min(100, ((0.47 - (withWaist.waist / 75)) / (0.47 - 0.41)) * 100));
-    const overall = Math.round((bfPct + whrPct) / 2);
+    let overall;
+    if (withWaist) {
+      const whrPct = Math.max(0, Math.min(100, ((0.47 - (withWaist.waist / 75)) / (0.47 - 0.41)) * 100));
+      overall = Math.round((bfPct + whrPct) / 2);
+    } else {
+      overall = Math.round(bfPct);
+    }
     document.getElementById('cp-overall').textContent = overall + '%';
     document.getElementById('cp-overall-gap').textContent = overall >= 100 ? 'Goal reached!' : (100 - overall) + '% remaining';
   }
@@ -2394,15 +2399,34 @@ function openMetricModal(metric) {
     },
     overall: {
       title: 'Overall progress',
-      meta: 'Average of BF% progress + waist:height ratio progress',
+      meta: 'Average of BF% progress + waist:height ratio progress (waist used when available)',
       goal: 100,
       goalLabel: '100%',
       color: '#c8f060',
-      data: sorted.filter(e => e.bf && e.waist).map(e => {
-        const bfPct  = Math.max(0, Math.min(100, ((14 - actualBF(e.bf)) / (14 - GOAL_BF)) * 100));
-        const whrPct = Math.max(0, Math.min(100, ((0.47 - e.waist / 75) / (0.47 - 0.41)) * 100));
-        return { x: fmtDate(e.date), y: +((bfPct + whrPct) / 2).toFixed(1) };
-      }),
+      data: (() => {
+        const bfEntries = sorted.filter(e => e.bf);
+        return bfEntries.map(e => {
+          const bfPct = Math.max(0, Math.min(100, ((14 - actualBF(e.bf)) / (14 - GOAL_BF)) * 100));
+          // Use waist from this entry if available, otherwise find closest logged waist
+          let whrPct = null;
+          if (e.waist) {
+            whrPct = Math.max(0, Math.min(100, ((0.47 - e.waist / 75) / (0.47 - 0.41)) * 100));
+          } else {
+            // Find closest entry with a waist measurement
+            const waistEntries = sorted.filter(e2 => e2.waist);
+            if (waistEntries.length > 0) {
+              const closest = waistEntries.reduce((a, b) =>
+                Math.abs(new Date(b.date) - new Date(e.date)) < Math.abs(new Date(a.date) - new Date(e.date)) ? b : a
+              );
+              whrPct = Math.max(0, Math.min(100, ((0.47 - closest.waist / 75) / (0.47 - 0.41)) * 100));
+            }
+          }
+          const overall = whrPct !== null
+            ? (bfPct + whrPct) / 2
+            : bfPct;
+          return { x: fmtDate(e.date), y: +overall.toFixed(1) };
+        });
+      })(),
       format: v => v.toFixed(0) + '%',
       goodDirection: 'up',
     },
