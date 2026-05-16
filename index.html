@@ -977,19 +977,30 @@
 
     <div class="log-grid three">
       <div class="field">
-        <label>Waist</label>
+        <label>Waist (narrowest)</label>
         <input type="number" id="l-waist" placeholder="33" min="24" max="50" step="0.5">
-        <div class="field-unit">inches (optional)</div>
+        <div class="field-unit">inches — natural pinch above navel</div>
+      </div>
+      <div class="field">
+        <label>Hips</label>
+        <input type="number" id="l-hip" placeholder="39" min="28" max="65" step="0.5">
+        <div class="field-unit">inches — widest point across glutes</div>
       </div>
       <div class="field">
         <label>Chest</label>
         <input type="number" id="l-chest" placeholder="38" min="28" max="60" step="0.5">
-        <div class="field-unit">inches (optional)</div>
+        <div class="field-unit">inches — fullest point</div>
       </div>
+    </div>
+    <div class="log-grid" style="grid-template-columns:1fr 1fr;">
       <div class="field">
         <label>Shoulders</label>
         <input type="number" id="l-shoulders" placeholder="46" min="30" max="70" step="0.5">
-        <div class="field-unit">inches (optional)</div>
+        <div class="field-unit">inches — widest point</div>
+      </div>
+      <div class="field" style="background:var(--surface2); border-color:transparent;">
+        <label style="color:var(--surface2);">—</label>
+        <div style="font-size:11px; font-family:var(--font-mono); color:var(--muted); margin-top:8px; line-height:1.7;">Measurements are optional — log when you have a tape measure to hand. Monthly is plenty.</div>
       </div>
     </div>
 
@@ -1017,26 +1028,50 @@
         <div class="comp-metric" onclick="openMetricModal('whr')">
           <div class="comp-label">Waist : Height</div>
           <div class="comp-row">
-            <div class="comp-you"><div class="comp-num" id="cp-whr-you">0.47</div><div class="comp-who">You</div></div>
+            <div class="comp-you"><div class="comp-num" id="cp-whr-you">—</div><div class="comp-who">You</div></div>
             <div class="comp-goal"><div class="comp-num">0.41</div><div class="comp-who">Goal</div></div>
           </div>
-          <div class="comp-gap" id="cp-whr-gap">~4" waist to lose</div>
+          <div class="comp-gap" id="cp-whr-gap">log waist to calculate</div>
         </div>
         <div class="comp-metric" onclick="openMetricModal('bf')">
           <div class="comp-label">Body fat %</div>
           <div class="comp-row">
-            <div class="comp-you"><div class="comp-num" id="cp-bf-you">13.8</div><div class="comp-who">You (Navy)</div></div>
+            <div class="comp-you"><div class="comp-num" id="cp-bf-you">—</div><div class="comp-who">You (Navy)</div></div>
             <div class="comp-goal"><div class="comp-num">~11</div><div class="comp-who">Goal</div></div>
           </div>
-          <div class="comp-gap" id="cp-bf-gap">~2.8% to go</div>
+          <div class="comp-gap" id="cp-bf-gap">log to calculate</div>
         </div>
-        <div class="comp-metric" onclick="openMetricModal('weight')">
-          <div class="comp-label">Weight</div>
+        <div class="comp-metric" onclick="openMetricModal('cwr')">
+          <div class="comp-label">Chest : Waist</div>
           <div class="comp-row">
-            <div class="comp-you"><div class="comp-num" id="cp-wt-you">12st 8</div><div class="comp-who">You</div></div>
-            <div class="comp-goal"><div class="comp-num">~11st 13</div><div class="comp-who">Goal range</div></div>
+            <div class="comp-you"><div class="comp-num" id="cp-cwr-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">1.20</div><div class="comp-who">Goal</div></div>
           </div>
-          <div class="comp-gap" id="cp-wt-gap">~9lbs to lose</div>
+          <div class="comp-gap" id="cp-cwr-gap">log chest + waist</div>
+        </div>
+        <div class="comp-metric" onclick="openMetricModal('shr')">
+          <div class="comp-label">Shoulder : Hip</div>
+          <div class="comp-row">
+            <div class="comp-you"><div class="comp-num" id="cp-shr-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">1.40</div><div class="comp-who">Goal</div></div>
+          </div>
+          <div class="comp-gap" id="cp-shr-gap">log shoulders + hips</div>
+        </div>
+        <div class="comp-metric" onclick="openMetricModal('wahr')">
+          <div class="comp-label">Waist : Hip</div>
+          <div class="comp-row">
+            <div class="comp-you"><div class="comp-num" id="cp-wahr-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">0.80</div><div class="comp-who">Goal</div></div>
+          </div>
+          <div class="comp-gap" id="cp-wahr-gap">log waist + hips</div>
+        </div>
+        <div class="comp-metric" onclick="openMetricModal('ffmi')">
+          <div class="comp-label">FFMI</div>
+          <div class="comp-row">
+            <div class="comp-you"><div class="comp-num" id="cp-ffmi-you">—</div><div class="comp-who">You</div></div>
+            <div class="comp-goal"><div class="comp-num">20.5</div><div class="comp-who">Goal</div></div>
+          </div>
+          <div class="comp-gap" id="cp-ffmi-gap">fat-free mass index</div>
         </div>
         <div class="comp-metric" onclick="openMetricModal('lean')">
           <div class="comp-label">Lean mass (est.)</div>
@@ -1054,7 +1089,7 @@
               <div class="comp-who">to goal physique</div>
             </div>
           </div>
-          <div class="comp-gap" id="cp-overall-gap">based on BF + waist ratio</div>
+          <div class="comp-gap" id="cp-overall-gap">composite score</div>
         </div>
       </div>
 
@@ -1290,7 +1325,9 @@
 
     <div class="log-card" style="margin-bottom:12px;">
       <div style="font-size:13px; font-family:var(--font-mono); color:var(--muted); line-height:1.8; margin-bottom:16px;">
-        Measure <strong style="color:var(--text);">neck</strong> just below the larynx (Adam's apple), and <strong style="color:var(--text);">waist</strong> at the navel, at the widest point. Stand relaxed, don't suck in. Both in inches.
+        <strong style="color:var(--text);">Neck</strong> — just below the Adam's apple.<br>
+        <strong style="color:var(--text);">Waist (abdomen)</strong> — at the navel, widest point, standing relaxed. Don't suck in.<br>
+        <span style="color:var(--accent);">Note:</span> this is <em>different</em> to the waist you log daily. The Navy formula needs the navel circumference (abdomen), not the narrowest point. Your daily log waist is the narrowest point above the navel.
       </div>
       <div class="log-grid">
         <div class="field">
@@ -1299,9 +1336,9 @@
           <div class="field-unit">inches</div>
         </div>
         <div class="field">
-          <label>Waist at navel</label>
+          <label>Waist at navel (abdomen)</label>
           <input type="number" id="c-waist" placeholder="37.1" min="24" max="60" step="0.1" oninput="previewNavy()">
-          <div class="field-unit">inches — widest point</div>
+          <div class="field-unit">inches — widest point, relaxed, not sucked in</div>
         </div>
       </div>
 
@@ -1432,7 +1469,7 @@
 const GOOGLE_CLIENT_ID = '520774618906-jbupm1s9jartsvflf52o44ungekm3636.apps.googleusercontent.com';
 const DRIVE_FILE_NAME  = 'form-physique-data.json';
 const SCOPES           = 'https://www.googleapis.com/auth/drive.appdata';
-const STORE_KEY        = 'form_physique_v3'; // localStorage fallback key
+const STORE_KEY        = 'form_physique_v4'; // localStorage fallback key
 const NAVY_KEY         = 'form_navy_cals_v1';
 
 // ─── STORAGE LAYER ────────────────────────────────────────────────────────────
@@ -1717,11 +1754,20 @@ function sortedWeightEntries() {
 }
 
 // ─── GOALS ───────────────────────────────────────────────────────────────────
-const GOAL_BF = 11.0;
-const GOAL_WEIGHT_LBS = 167; // 11st 13 — Shawn's 11st 11 scaled +1" to 6'3"
-const GOAL_LEAN_LBS = 149;   // 167 * 0.89
-const PROTEIN_TARGET = 185;
-const HEIGHT_IN = 75; // 6'3"
+const GOAL_BF          = 11.0;
+const GOAL_WEIGHT_LBS  = 167;   // 11st 13 — Shawn scaled to 6'3"
+const GOAL_LEAN_LBS    = 149;   // 167 * 0.89
+const PROTEIN_TARGET   = 185;
+const HEIGHT_IN        = 75;    // 6'3"
+const HEIGHT_M         = 1.905; // for FFMI
+// Ratio goals (Shawn Mendes proportions, scaled to 6'3")
+const GOAL_SWR   = 1.60;  // shoulder:waist
+const GOAL_WHR   = 0.41;  // waist:height
+const GOAL_CWR   = 1.20;  // chest:waist
+const GOAL_SHR   = 1.40;  // shoulder:hip
+const GOAL_WAHR  = 0.80;  // waist:hip (aesthetics)
+const GOAL_FFMI  = 20.5;  // fat-free mass index (natural athletic peak)
+const GOAL_NWR   = 0.455; // neck:waist
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 function applySeeds() {
@@ -1988,43 +2034,75 @@ function updateDashboard() {
       : Math.abs(leanGap).toFixed(1) + 'lbs lean mass to build';
   }
 
-  // Waist, chest, shoulders — pull from most recent entry that has them
-  const withWaist = sortedEntries().filter(e => e.waist).slice(-1)[0];
+  // Measurements — pull most recent entry that has each
+  const withWaist     = sortedEntries().filter(e => e.waist).slice(-1)[0];
   const withShoulders = sortedEntries().filter(e => e.shoulders).slice(-1)[0];
+  const withChest     = sortedEntries().filter(e => e.chest).slice(-1)[0];
+  const withHip       = sortedEntries().filter(e => e.hip).slice(-1)[0];
+  const withNeck      = navyCals.length > 0 ? navyCals[navyCals.length - 1] : null;
 
-  // Waist-to-height ratio (height = 75")
+  // Helper to update a comp card
+  function setCard(id, val, goal, format, goodDir) {
+    const el = document.getElementById(id + '-you');
+    const gapEl = document.getElementById(id + '-gap');
+    if (!el) return;
+    if (val === null) { el.textContent = '—'; if (gapEl) gapEl.textContent = 'log to calculate'; return; }
+    el.textContent = format(val);
+    if (!gapEl) return;
+    const diff = goodDir === 'up' ? goal - val : val - goal;
+    if (Math.abs(diff) < 0.01) { gapEl.textContent = '✓ At goal'; return; }
+    gapEl.textContent = diff > 0
+      ? format(Math.abs(diff)) + (goodDir === 'up' ? ' to gain' : ' to lose')
+      : '✓ Beyond goal';
+  }
+
+  // Waist:Height
+  const whrVal = withWaist ? +(withWaist.waist / HEIGHT_IN).toFixed(3) : null;
+  setCard('cp-whr', whrVal, GOAL_WHR, v => v.toFixed(2), 'down');
+
+  // Shoulder:Waist
+  const swrVal = (withShoulders && withWaist) ? +(withShoulders.shoulders / withWaist.waist).toFixed(2) : null;
+  setCard('cp-swr', swrVal, GOAL_SWR, v => v.toFixed(2), 'up');
+
+  // Chest:Waist
+  const cwrVal = (withChest && withWaist) ? +(withChest.chest / withWaist.waist).toFixed(2) : null;
+  setCard('cp-cwr', cwrVal, GOAL_CWR, v => v.toFixed(2), 'up');
+
+  // Shoulder:Hip
+  const shrVal = (withShoulders && withHip) ? +(withShoulders.shoulders / withHip.hip).toFixed(2) : null;
+  setCard('cp-shr', shrVal, GOAL_SHR, v => v.toFixed(2), 'up');
+
+  // Waist:Hip
+  const wahrVal = (withWaist && withHip) ? +(withWaist.waist / withHip.hip).toFixed(2) : null;
+  setCard('cp-wahr', wahrVal, GOAL_WAHR, v => v.toFixed(2), 'down');
+
+  // FFMI = lean mass (kg) / height (m)^2
+  if (latest.bf) {
+    const navyEst   = actualBF(latest.bf);
+    const totalKg   = toLbs(latest.stone, latest.lbs) * 0.453592;
+    const leanKg    = totalKg * (1 - navyEst / 100);
+    const ffmi      = +(leanKg / (HEIGHT_M * HEIGHT_M)).toFixed(1);
+    setCard('cp-ffmi', ffmi, GOAL_FFMI, v => v.toFixed(1), 'up');
+  }
+
+  // Waist:Height legacy gap label fix
   if (withWaist) {
-    const whr = +(withWaist.waist / 75).toFixed(3);
-    document.getElementById('cp-whr-you').textContent = whr.toFixed(2);
-    const whGap = +(withWaist.waist - (0.41 * 75)).toFixed(1);
-    document.getElementById('cp-whr-gap').textContent = whGap > 0
-      ? whGap.toFixed(1) + '" waist to lose'
-      : 'At goal ratio!';
+    const waistGap = +(withWaist.waist - GOAL_WHR * HEIGHT_IN).toFixed(1);
+    const gapEl = document.getElementById('cp-whr-gap');
+    if (gapEl) gapEl.textContent = waistGap > 0 ? waistGap + '" waist to lose' : '✓ At goal ratio';
   }
 
-  // Shoulder-to-waist ratio
-  if (withWaist && withShoulders) {
-    const swr = +(withShoulders.shoulders / withWaist.waist).toFixed(2);
-    document.getElementById('cp-swr-you').textContent = swr.toFixed(2);
-    const swGap = +(1.60 - swr).toFixed(2);
-    document.getElementById('cp-swr-gap').textContent = swGap > 0.02
-      ? swGap.toFixed(2) + ' ratio to go'
-      : swGap < -0.02 ? 'Exceeds goal!' : 'At goal ratio!';
-  } else if (withWaist || withShoulders) {
-    document.getElementById('cp-swr-gap').textContent = 'log both to calculate';
-  }
-
-  // Overall progress — average of BF% progress and WHR progress (WHR optional)
+  // Overall progress — composite of all available ratios
   const latestBF = sortedEntries().filter(e => e.bf).slice(-1)[0];
   if (latestBF) {
-    const bfPct  = Math.max(0, Math.min(100, ((14 - actualBF(latestBF.bf)) / (14 - GOAL_BF)) * 100));
-    let overall;
-    if (withWaist) {
-      const whrPct = Math.max(0, Math.min(100, ((0.47 - (withWaist.waist / 75)) / (0.47 - 0.41)) * 100));
-      overall = Math.round((bfPct + whrPct) / 2);
-    } else {
-      overall = Math.round(bfPct);
-    }
+    const bfPct   = Math.max(0, Math.min(100, ((14 - actualBF(latestBF.bf)) / (14 - GOAL_BF)) * 100));
+    const whrPct  = withWaist ? Math.max(0, Math.min(100, ((0.47 - withWaist.waist / HEIGHT_IN) / (0.47 - GOAL_WHR)) * 100)) : null;
+    const swrPct  = swrVal  ? Math.max(0, Math.min(100, ((swrVal  - 1.3) / (GOAL_SWR  - 1.3)) * 100)) : null;
+    const cwrPct  = cwrVal  ? Math.max(0, Math.min(100, ((cwrVal  - 1.0) / (GOAL_CWR  - 1.0)) * 100)) : null;
+    const shrPct  = shrVal  ? Math.max(0, Math.min(100, ((shrVal  - 1.1) / (GOAL_SHR  - 1.1)) * 100)) : null;
+    const wahrPct = wahrVal ? Math.max(0, Math.min(100, ((0.95 - wahrVal) / (0.95 - GOAL_WAHR)) * 100)) : null;
+    const components = [bfPct, whrPct, swrPct, cwrPct, shrPct, wahrPct].filter(v => v !== null);
+    const overall = Math.round(components.reduce((a, b) => a + b, 0) / components.length);
     document.getElementById('cp-overall').textContent = overall + '%';
     document.getElementById('cp-overall-gap').textContent = overall >= 100 ? 'Goal reached!' : (100 - overall) + '% remaining';
   }
@@ -2140,6 +2218,7 @@ function submitLog() {
     protein: parseInt(document.getElementById('l-protein').value) || null,
     steps: parseInt(document.getElementById('l-steps').value) || null,
     waist: parseFloat(document.getElementById('l-waist').value) || null,
+    hip: parseFloat(document.getElementById('l-hip').value) || null,
     chest: parseFloat(document.getElementById('l-chest').value) || null,
     shoulders: parseFloat(document.getElementById('l-shoulders').value) || null,
   };
@@ -2176,7 +2255,7 @@ function submitLog() {
   document.getElementById('celebrate').classList.add('show');
 
   // Clear form
-  ['l-stone','l-lbs','l-bf','l-cals','l-protein','l-steps','l-waist','l-chest','l-shoulders']
+  ['l-stone','l-lbs','l-bf','l-cals','l-protein','l-steps','l-waist','l-hip','l-chest','l-shoulders']
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('protein-hint').textContent = 'Target: 185g+';
   document.getElementById('protein-hint').style.color = 'var(--muted)';
@@ -2397,34 +2476,70 @@ function openMetricModal(metric) {
       format: v => v.toFixed(2),
       goodDirection: 'up',
     },
+    cwr: {
+      title: 'Chest : Waist ratio',
+      meta: 'Chest (fullest) ÷ waist (narrowest) · Goal: 1.20 — wide chest, tight waist',
+      goal: GOAL_CWR,
+      goalLabel: '1.20',
+      color: '#a78bfa',
+      data: sorted.filter(e => e.chest && e.waist).map(e => ({ x: fmtDate(e.date), y: +(e.chest / e.waist).toFixed(3) })),
+      format: v => v.toFixed(2),
+      goodDirection: 'up',
+    },
+    shr: {
+      title: 'Shoulder : Hip ratio',
+      meta: 'Shoulders (widest) ÷ hips (widest) · Goal: 1.40 — the V-taper from above',
+      goal: GOAL_SHR,
+      goalLabel: '1.40',
+      color: '#f060c8',
+      data: sorted.filter(e => e.shoulders && e.hip).map(e => ({ x: fmtDate(e.date), y: +(e.shoulders / e.hip).toFixed(3) })),
+      format: v => v.toFixed(2),
+      goodDirection: 'up',
+    },
+    wahr: {
+      title: 'Waist : Hip ratio',
+      meta: 'Waist (narrowest) ÷ hips (widest) · Goal: 0.80 — athletic taper',
+      goal: GOAL_WAHR,
+      goalLabel: '0.80',
+      color: '#60f0c8',
+      data: sorted.filter(e => e.waist && e.hip).map(e => ({ x: fmtDate(e.date), y: +(e.waist / e.hip).toFixed(3) })),
+      format: v => v.toFixed(2),
+      goodDirection: 'down',
+    },
+    ffmi: {
+      title: 'Fat-Free Mass Index',
+      meta: 'Lean mass (kg) ÷ height² (m) · Goal: 20.5 — natural athletic peak · Shawn est. ~20–21',
+      goal: GOAL_FFMI,
+      goalLabel: '20.5',
+      color: '#f0a060',
+      data: sorted.filter(e => e.bf && e.stone).map(e => {
+        const lbs    = toLbs(e.stone, e.lbs);
+        const leanKg = lbs * 0.453592 * (1 - actualBF(e.bf) / 100);
+        return { x: fmtDate(e.date), y: +(leanKg / (HEIGHT_M * HEIGHT_M)).toFixed(1) };
+      }),
+      format: v => v.toFixed(1),
+      goodDirection: 'up',
+    },
     overall: {
       title: 'Overall progress',
-      meta: 'Average of BF% progress + waist:height ratio progress (waist used when available)',
+      meta: 'Composite score across all tracked ratios — BF%, waist:height, shoulder:waist, chest:waist, shoulder:hip, waist:hip',
       goal: 100,
       goalLabel: '100%',
       color: '#c8f060',
       data: (() => {
-        const bfEntries = sorted.filter(e => e.bf);
-        return bfEntries.map(e => {
+        return sorted.filter(e => e.bf).map(e => {
           const bfPct = Math.max(0, Math.min(100, ((14 - actualBF(e.bf)) / (14 - GOAL_BF)) * 100));
-          // Use waist from this entry if available, otherwise find closest logged waist
-          let whrPct = null;
-          if (e.waist) {
-            whrPct = Math.max(0, Math.min(100, ((0.47 - e.waist / 75) / (0.47 - 0.41)) * 100));
-          } else {
-            // Find closest entry with a waist measurement
-            const waistEntries = sorted.filter(e2 => e2.waist);
-            if (waistEntries.length > 0) {
-              const closest = waistEntries.reduce((a, b) =>
-                Math.abs(new Date(b.date) - new Date(e.date)) < Math.abs(new Date(a.date) - new Date(e.date)) ? b : a
-              );
-              whrPct = Math.max(0, Math.min(100, ((0.47 - closest.waist / 75) / (0.47 - 0.41)) * 100));
-            }
-          }
-          const overall = whrPct !== null
-            ? (bfPct + whrPct) / 2
-            : bfPct;
-          return { x: fmtDate(e.date), y: +overall.toFixed(1) };
+          const waistE = sorted.filter(x => x.waist && x.date <= e.date).slice(-1)[0];
+          const shouldE = sorted.filter(x => x.shoulders && x.date <= e.date).slice(-1)[0];
+          const chestE = sorted.filter(x => x.chest && x.date <= e.date).slice(-1)[0];
+          const hipE = sorted.filter(x => x.hip && x.date <= e.date).slice(-1)[0];
+          const components = [bfPct];
+          if (waistE) components.push(Math.max(0, Math.min(100, ((0.47 - waistE.waist / HEIGHT_IN) / (0.47 - GOAL_WHR)) * 100)));
+          if (shouldE && waistE) components.push(Math.max(0, Math.min(100, ((shouldE.shoulders / waistE.waist - 1.3) / (GOAL_SWR - 1.3)) * 100)));
+          if (chestE && waistE) components.push(Math.max(0, Math.min(100, ((chestE.chest / waistE.waist - 1.0) / (GOAL_CWR - 1.0)) * 100)));
+          if (shouldE && hipE) components.push(Math.max(0, Math.min(100, ((shouldE.shoulders / hipE.hip - 1.1) / (GOAL_SHR - 1.1)) * 100)));
+          if (waistE && hipE) components.push(Math.max(0, Math.min(100, ((0.95 - waistE.waist / hipE.hip) / (0.95 - GOAL_WAHR)) * 100)));
+          return { x: fmtDate(e.date), y: +(components.reduce((a,b) => a+b,0) / components.length).toFixed(1) };
         });
       })(),
       format: v => v.toFixed(0) + '%',
